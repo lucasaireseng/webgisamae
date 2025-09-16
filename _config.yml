@@ -1,0 +1,39 @@
+# Configuração para GitHub Pages
+title: WebGIS AMAE - Rio Verde/GO
+description: Sistema de Informações Geográficas da AMAE
+author: AMAE Rio Verde
+baseurl: "/webgis-amae"  # Substitua pelo nome do seu repositório
+url: "https://seu-usuario.github.io"  # Substitua pelo seu usuário
+
+# Configurações do site
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Configurações de build
+exclude:
+  - README.md
+  - server.py
+  - test_*.html
+  - debug_*.html
+  - *_simple.*
+  - .gitignore
+  - _config.yml
+
+# Configurações de coleções
+collections:
+  - docs
+
+# Configurações de plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Configurações de SEO
+seo:
+  type: "WebSite"
+  name: "WebGIS AMAE"
+  description: "Sistema de Informações Geográficas da AMAE de Rio Verde/GO"
+  url: "https://seu-usuario.github.io/webgis-amae"
+  image: "/LOGO/AMAEGIS.jpg"

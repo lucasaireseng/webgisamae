@@ -1,0 +1,620 @@
+// Inicializa os mapas de fundo (basemaps)
+// Google Maps
+const googleMaps = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+	maxZoom: 20,
+	attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
+});
+
+// Google Satellite
+const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+	maxZoom: 20,
+	attribution: '&copy; <a href="https://www.google.com/maps">Google Satellite</a>'
+});
+
+// ESRI World Imagery
+const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	maxZoom: 19,
+	attribution: '&copy; <a href="https://www.esri.com/">Esri</a> — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});
+
+// Cria o mapa centralizado no perímetro urbano de Rio Verde, Goiás
+const map = L.map('map', {
+	center: [-17.7975, -50.9250],
+	zoom: 13,
+	layers: [googleSatellite]
+});
+
+// Controle de camadas para alternar entre os basemaps
+const baseMaps = {
+	"Google Maps": googleMaps,
+	"Google Satélite": googleSatellite,
+	"ESRI Satélite": esriImagery
+};
+
+// Armazena as camadas para controle da sidebar
+let layerGroups = {
+	'agua': null,
+	'esgoto': null,
+	'geral': null,
+	'bairros': null
+};
+
+// Flag para controlar se as camadas foram carregadas
+let layersLoaded = {
+	'agua': false,
+	'esgoto': false,
+	'geral': false,
+	'bairros': false
+};
+
+// Função para alternar basemap
+function changeBasemap(basemapName) {
+	// Remove todas as camadas de basemap
+	Object.values(baseMaps).forEach(layer => {
+		map.removeLayer(layer);
+	});
+	
+	// Adiciona a camada selecionada
+	if (baseMaps[basemapName]) {
+		map.addLayer(baseMaps[basemapName]);
+	}
+}
+
+// Função para alternar camada de dados
+function toggleLayer(layerId, show) {
+	console.log(`Toggle layer ${layerId}: ${show}`);
+	console.log('Layer groups:', layerGroups);
+	console.log('Layers loaded:', layersLoaded);
+	
+	if (!layersLoaded[layerId]) {
+		console.warn(`Camada ${layerId} ainda não foi carregada!`);
+		return;
+	}
+	
+	if (layerGroups[layerId]) {
+		if (show) {
+			map.addLayer(layerGroups[layerId]);
+			console.log(`Camada ${layerId} adicionada ao mapa`);
+		} else {
+			map.removeLayer(layerGroups[layerId]);
+			console.log(`Camada ${layerId} removida do mapa`);
+		}
+	} else {
+		console.error(`Camada ${layerId} não encontrada!`);
+	}
+}
+
+// Função para centralizar no perímetro urbano de Rio Verde
+function centerOnRioVerde() {
+	const rioVerdeBounds = L.latLngBounds(
+		[-17.85, -50.98], // Sudoeste
+		[-17.75, -50.87]  // Nordeste
+	);
+	map.fitBounds(rioVerdeBounds);
+}
+
+// Função para obter localização atual do usuário
+function getCurrentLocation() {
+	const locationBtn = document.getElementById('location-btn');
+	
+	if (!navigator.geolocation) {
+		alert('Geolocalização não é suportada por este navegador.');
+		return;
+	}
+	
+	// Mostra indicador de carregamento
+	locationBtn.innerHTML = '⏳';
+	locationBtn.disabled = true;
+	
+	navigator.geolocation.getCurrentPosition(
+		function(position) {
+			const lat = position.coords.latitude;
+			const lng = position.coords.longitude;
+			const accuracy = position.coords.accuracy;
+			
+			console.log(`Localização obtida: ${lat}, ${lng} (precisão: ${accuracy}m)`);
+			
+			// Cria marcador da localização atual
+			const userLocation = L.marker([lat, lng], {
+				icon: L.divIcon({
+					className: 'user-location-marker',
+					html: '📍',
+					iconSize: [30, 30],
+					iconAnchor: [15, 30]
+				})
+			}).addTo(map);
+			
+			// Adiciona popup com informações
+			userLocation.bindPopup(`
+				<div style="text-align: center;">
+					<h3>📍 Seu Local</h3>
+					<p><strong>Latitude:</strong> ${lat.toFixed(6)}</p>
+					<p><strong>Longitude:</strong> ${lng.toFixed(6)}</p>
+					<p><strong>Precisão:</strong> ${Math.round(accuracy)} metros</p>
+				</div>
+			`).openPopup();
+			
+			// Centraliza o mapa na localização do usuário
+			map.setView([lat, lng], 16);
+			
+			// Adiciona círculo de precisão
+			L.circle([lat, lng], {
+				radius: accuracy,
+				color: '#3388ff',
+				fillColor: '#3388ff',
+				fillOpacity: 0.2,
+				weight: 2
+			}).addTo(map);
+			
+			// Restaura o botão
+			locationBtn.innerHTML = '📍';
+			locationBtn.disabled = false;
+			
+			console.log('✅ Localização centralizada no mapa');
+		},
+		function(error) {
+			console.error('Erro ao obter localização:', error);
+			
+			let errorMessage = 'Erro ao obter localização: ';
+			switch(error.code) {
+				case error.PERMISSION_DENIED:
+					errorMessage += 'Permissão negada pelo usuário.';
+					break;
+				case error.POSITION_UNAVAILABLE:
+					errorMessage += 'Localização indisponível.';
+					break;
+				case error.TIMEOUT:
+					errorMessage += 'Tempo limite excedido.';
+					break;
+				default:
+					errorMessage += 'Erro desconhecido.';
+					break;
+			}
+			
+			alert(errorMessage);
+			
+			// Restaura o botão
+			locationBtn.innerHTML = '📍';
+			locationBtn.disabled = false;
+		},
+		{
+			enableHighAccuracy: true,
+			timeout: 10000,
+			maximumAge: 60000
+		}
+	);
+}
+
+// Função para definir limites do mapa
+function setMapLimits() {
+	const maxBounds = L.latLngBounds(
+		[-17.90, -51.05], // Sudoeste
+		[-17.70, -50.80]  // Nordeste
+	);
+	map.setMaxBounds(maxBounds);
+	
+	// Adiciona botão para centralizar em Rio Verde
+	const centerButton = L.control({position: 'topright'});
+	centerButton.onAdd = function(map) {
+		const div = L.DomUtil.create('div', 'center-rio-verde-btn');
+		div.innerHTML = '<button title="Centralizar em Rio Verde">🏙️</button>';
+		div.style.cssText = 'background: white; padding: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-bottom: 5px;';
+		
+		div.onclick = function() {
+			centerOnRioVerde();
+		};
+		
+		return div;
+	};
+	centerButton.addTo(map);
+	
+	// Adiciona botão para localização atual
+	const locationButton = L.control({position: 'topright'});
+	locationButton.onAdd = function(map) {
+		const div = L.DomUtil.create('div', 'location-btn');
+		div.innerHTML = '<button title="Seu Local" id="location-btn">📍</button>';
+		div.style.cssText = 'background: white; padding: 5px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);';
+		
+		div.onclick = function() {
+			getCurrentLocation();
+		};
+		
+		return div;
+	};
+	locationButton.addTo(map);
+}
+
+// Event listeners para a sidebar
+document.addEventListener('DOMContentLoaded', function() {
+	// Toggle da sidebar
+	const toggleBtn = document.getElementById('toggle-sidebar');
+	const sidebar = document.getElementById('sidebar');
+	const mapDiv = document.getElementById('map');
+	
+	toggleBtn.addEventListener('click', function() {
+		sidebar.classList.toggle('collapsed');
+		mapDiv.classList.toggle('sidebar-collapsed');
+	});
+	
+	// Controle de basemaps
+		document.querySelectorAll('input[name="basemap"]').forEach(radio => {
+			radio.addEventListener('change', function() {
+				if (this.checked) {
+					const basemapName = this.value === 'google' ? 'Google Maps' : 
+									   this.value === 'satellite' ? 'Google Satélite' : 
+									   'ESRI Satélite';
+					changeBasemap(basemapName);
+				}
+			});
+		});
+	
+	// Controle de camadas de dados
+	document.getElementById('layer-agua').addEventListener('change', function() {
+		console.log('Checkbox ÁGUA alterado:', this.checked);
+		toggleLayer('agua', this.checked);
+	});
+	
+	document.getElementById('layer-esgoto').addEventListener('change', function() {
+		console.log('Checkbox ESGOTO alterado:', this.checked);
+		toggleLayer('esgoto', this.checked);
+	});
+	
+	document.getElementById('layer-geral').addEventListener('change', function() {
+		console.log('Checkbox GERAL alterado:', this.checked);
+		toggleLayer('geral', this.checked);
+	});
+	
+	document.getElementById('layer-bairros').addEventListener('change', function() {
+		console.log('Checkbox BAIRROS alterado:', this.checked);
+		toggleLayer('bairros', this.checked);
+	});
+});
+
+// Escala
+L.control.scale({ metric: true, imperial: false }).addTo(map);
+
+// Define limites e controles do mapa
+setMapLimits();
+
+// Função para criar popup
+function createPopup(feature, layer) {
+	if (feature.properties) {
+		let popupContent = '<div class="popup-content">';
+		
+		if (feature.properties.tipo) {
+			popupContent += `<h3>${feature.properties.tipo}</h3>`;
+		} else if (feature.properties.nome) {
+			popupContent += `<h3>${feature.properties.nome}</h3>`;
+		}
+		
+		Object.keys(feature.properties).forEach(key => {
+			if (key !== 'tipo' && key !== 'nome' && feature.properties[key]) {
+				popupContent += `<p><strong>${key}:</strong> ${feature.properties[key]}</p>`;
+			}
+		});
+		
+		popupContent += '</div>';
+		layer.bindPopup(popupContent);
+	}
+}
+
+// Função para detectar pontos próximos e criar popup agrupado
+function createGroupedPopup(lat, lng, radius = 0.0005) {
+	const nearbyFeatures = [];
+	
+	// Verifica todas as camadas ativas
+	Object.values(layerGroups).forEach(layer => {
+		if (layer && map.hasLayer(layer)) {
+			layer.eachLayer(function(marker) {
+				if (marker.getLatLng) {
+					const markerPos = marker.getLatLng();
+					const distance = Math.sqrt(
+						Math.pow(markerPos.lat - lat, 2) + 
+						Math.pow(markerPos.lng - lng, 2)
+					);
+					
+					if (distance <= radius) {
+						nearbyFeatures.push({
+							layer: layer,
+							marker: marker,
+							feature: marker.feature,
+							distance: distance
+						});
+					}
+				}
+			});
+		}
+	});
+	
+	if (nearbyFeatures.length > 1) {
+		// Ordena por distância
+		nearbyFeatures.sort((a, b) => a.distance - b.distance);
+		
+		let popupContent = '<div class="popup-content">';
+		popupContent += `<h3>📍 ${nearbyFeatures.length} Pontos Próximos</h3>`;
+		popupContent += '<div class="grouped-features">';
+		
+		nearbyFeatures.forEach((item, index) => {
+			const feature = item.feature;
+			const layerName = getLayerName(item.layer);
+			
+			popupContent += `<div class="feature-item">`;
+			popupContent += `<h4>${index + 1}. ${layerName}</h4>`;
+			
+			if (feature.properties) {
+				Object.keys(feature.properties).forEach(key => {
+					if (feature.properties[key]) {
+						popupContent += `<p><strong>${key}:</strong> ${feature.properties[key]}</p>`;
+					}
+				});
+			}
+			
+			popupContent += `</div>`;
+			if (index < nearbyFeatures.length - 1) {
+				popupContent += '<hr class="feature-separator">';
+			}
+		});
+		
+		popupContent += '</div></div>';
+		
+		// Cria popup temporário
+		const tempPopup = L.popup()
+			.setLatLng([lat, lng])
+			.setContent(popupContent)
+			.openOn(map);
+		
+		return true;
+	}
+	
+	return false;
+}
+
+// Função para obter nome da camada
+function getLayerName(layer) {
+	if (layer === layerGroups['agua']) return 'ÁGUA';
+	if (layer === layerGroups['esgoto']) return 'ESGOTO';
+	if (layer === layerGroups['geral']) return 'GERAL';
+	if (layer === layerGroups['bairros']) return 'BAIRROS';
+	return 'Desconhecida';
+}
+
+// Função para carregar arquivos GeoJSON
+function loadGeoJSON(url, options) {
+	console.log(`Carregando: ${url}`);
+	return fetch(url)
+		.then(response => {
+			console.log(`Status: ${response.status}`);
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
+			return response.json();
+		})
+		.then(data => {
+			console.log(`Dados carregados: ${data.features ? data.features.length : 0} features`);
+			
+			// Corrige coordenadas se necessário
+			if (data.features) {
+				data.features.forEach(feature => {
+					if (feature.geometry && feature.geometry.type === 'Point') {
+						const coords = feature.geometry.coordinates;
+						if (coords[0] > coords[1]) {
+							feature.geometry.coordinates = [coords[1], coords[0]];
+							console.log(`Coordenadas corrigidas: [${coords[1]}, ${coords[0]}]`);
+						}
+					}
+				});
+			}
+			
+			const layer = L.geoJSON(data, {
+				onEachFeature: createPopup,
+				...options
+			});
+			
+			console.log(`Camada criada: ${layer}`);
+			return layer;
+		})
+		.catch(error => {
+			console.error(`Erro: ${error.message}`);
+			return null;
+		});
+}
+
+// Carrega as camadas
+console.log('Iniciando carregamento...');
+
+// Carrega ÁGUA (sem adicionar ao mapa inicialmente)
+loadGeoJSON('ARQUIVO JGESON/ÁGUA.geojson', {
+	pointToLayer: (feature, latlng) => {
+		const marker = L.circleMarker(latlng, {
+			radius: 8,
+			fillColor: '#0066cc',
+			color: '#003d7a',
+			weight: 2,
+			opacity: 1,
+			fillOpacity: 0.8
+		});
+		
+		// Adiciona evento de clique para detectar sobreposições
+		marker.on('click', function(e) {
+			e.originalEvent.stopPropagation();
+			const pos = e.latlng;
+			
+			// Primeiro tenta criar popup agrupado
+			if (!createGroupedPopup(pos.lat, pos.lng)) {
+				// Se não há sobreposição, mostra popup normal
+				marker.openPopup();
+			}
+		});
+		
+		return marker;
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['agua'] = layer;
+		layersLoaded['agua'] = true;
+		console.log('Camada ÁGUA carregada (não ativa)');
+		console.log('Features na camada ÁGUA:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('Falha ao carregar camada ÁGUA');
+	}
+});
+
+// Carrega ESGOTO (sem adicionar ao mapa inicialmente)
+loadGeoJSON('ARQUIVO JGESON/ESGOTO.geojson', {
+	pointToLayer: (feature, latlng) => {
+		const marker = L.circleMarker(latlng, {
+			radius: 8,
+			fillColor: '#cc6600',
+			color: '#7a3d00',
+			weight: 2,
+			opacity: 1,
+			fillOpacity: 0.8
+		});
+		
+		// Adiciona evento de clique para detectar sobreposições
+		marker.on('click', function(e) {
+			e.originalEvent.stopPropagation();
+			const pos = e.latlng;
+			
+			// Primeiro tenta criar popup agrupado
+			if (!createGroupedPopup(pos.lat, pos.lng)) {
+				// Se não há sobreposição, mostra popup normal
+				marker.openPopup();
+			}
+		});
+		
+		return marker;
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['esgoto'] = layer;
+		layersLoaded['esgoto'] = true;
+		console.log('Camada ESGOTO carregada (não ativa)');
+		console.log('Features na camada ESGOTO:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('Falha ao carregar camada ESGOTO');
+	}
+});
+
+// Carrega GERAL (ativa por padrão)
+console.log('Iniciando carregamento da camada GERAL...');
+loadGeoJSON('ARQUIVO JGESON/GERAL.geojson', {
+	pointToLayer: (feature, latlng) => {
+		const marker = L.circleMarker(latlng, {
+			radius: 6,
+			fillColor: '#00cc66',
+			color: '#007a3d',
+			weight: 2,
+			opacity: 1,
+			fillOpacity: 0.8
+		});
+		
+		// Adiciona evento de clique para detectar sobreposições
+		marker.on('click', function(e) {
+			e.originalEvent.stopPropagation();
+			const pos = e.latlng;
+			
+			// Primeiro tenta criar popup agrupado
+			if (!createGroupedPopup(pos.lat, pos.lng)) {
+				// Se não há sobreposição, mostra popup normal
+				marker.openPopup();
+			}
+		});
+		
+		return marker;
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['geral'] = layer;
+		layersLoaded['geral'] = true;
+		layer.addTo(map);
+		console.log('✅ Camada GERAL adicionada (ativa)');
+		console.log('Features na camada GERAL:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('❌ Falha ao carregar camada GERAL');
+	}
+}).catch(error => {
+	console.error('❌ Erro no carregamento da camada GERAL:', error);
+});
+
+// Função para verificar se todas as camadas foram carregadas
+function checkAllLayersLoaded() {
+	const allLoaded = Object.values(layersLoaded).every(loaded => loaded);
+	if (allLoaded) {
+		console.log('✅ Todas as camadas foram carregadas com sucesso!');
+		console.log('Camadas disponíveis:', Object.keys(layerGroups).filter(key => layerGroups[key]));
+	} else {
+		console.log('⏳ Aguardando carregamento das camadas...');
+		console.log('Status:', layersLoaded);
+	}
+}
+
+// Carrega BAIRROS (polígonos - sem adicionar ao mapa inicialmente)
+loadGeoJSON('ARQUIVO JGESON/BAIRROS.geojson', {
+	style: function(feature) {
+		return {
+			color: '#0066cc',
+			weight: 2,
+			opacity: 0.8,
+			fillColor: '#0066cc',
+			fillOpacity: 0.3
+		};
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['bairros'] = layer;
+		layersLoaded['bairros'] = true;
+		console.log('Camada BAIRROS carregada (não ativa)');
+		console.log('Features na camada BAIRROS:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('Falha ao carregar camada BAIRROS');
+	}
+});
+
+// Camadas PV e REDE removidas para otimizar performance no GitHub Pages
+// (Arquivos muito grandes: PV com 31.060 features, REDE com 128.739 features)
+
+console.log('Carregamento iniciado');
+console.log('Verificando se todas as camadas foram carregadas...');
+
+// Verifica o status após 5 segundos
+setTimeout(() => {
+	console.log('Status das camadas após 5 segundos:');
+	console.log('Layers loaded:', layersLoaded);
+	console.log('Layer groups:', Object.keys(layerGroups).map(key => `${key}: ${layerGroups[key] ? 'OK' : 'NULL'}`));
+	
+	// Força o carregamento da camada GERAL se não foi carregada
+	if (!layersLoaded['geral']) {
+		console.log('⚠️ Camada GERAL não foi carregada, tentando novamente...');
+		loadGeoJSON('ARQUIVO JGESON/GERAL.geojson', {
+			pointToLayer: (feature, latlng) => {
+				const marker = L.circleMarker(latlng, {
+					radius: 6,
+					fillColor: '#00cc66',
+					color: '#007a3d',
+					weight: 2,
+					opacity: 1,
+					fillOpacity: 0.8
+				});
+				
+				marker.on('click', function(e) {
+					e.originalEvent.stopPropagation();
+					marker.openPopup();
+				});
+				
+				return marker;
+			}
+		}).then(layer => {
+			if (layer) {
+				layerGroups['geral'] = layer;
+				layersLoaded['geral'] = true;
+				layer.addTo(map);
+				console.log('✅ Camada GERAL carregada com sucesso!');
+			}
+		});
+	}
+}, 5000);
