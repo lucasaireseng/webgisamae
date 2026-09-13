@@ -242,15 +242,17 @@ html, body {
 	right: 0;
 	bottom: 0;
 	left: 300px;
-	width: auto;
-	height: auto;
+	width: calc(100% - 300px);
+	height: calc(100% - 80px);
+	height: calc(100dvh - 80px);
 	z-index: 1;
-	transition: left 0.3s ease;
+	transition: left 0.3s ease, width 0.3s ease;
 	background: #111111;
 }
 
 #map.sidebar-collapsed {
 	left: 50px;
+	width: calc(100% - 50px);
 }
 
 /* Estilos para popups */
@@ -445,6 +447,9 @@ html, body {
 		left: 0;
 		right: 0;
 		bottom: 0;
+		width: 100%;
+		height: calc(100% - 64px);
+		height: calc(100dvh - 64px);
 	}
 }
 
@@ -459,5 +464,6 @@ html, body {
 
 	#map:not(.sidebar-collapsed) {
 		left: 300px;
+		width: calc(100% - 300px);
 	}
 }

@@ -243,9 +243,15 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 
 	function refreshMapSize() {
-		setTimeout(function() {
-			map.invalidateSize();
-		}, 320);
+		requestAnimationFrame(function() {
+			map.invalidateSize({ animate: false });
+			setTimeout(function() {
+				map.invalidateSize({ animate: false });
+			}, 50);
+			setTimeout(function() {
+				map.invalidateSize({ animate: false });
+			}, 350);
+		});
 	}
 
 	function setSidebarOpen(open) {
