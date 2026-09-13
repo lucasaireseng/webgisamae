@@ -578,14 +578,12 @@ function checkAllLayersLoaded() {
 
 // Carrega BAIRROS (polígonos - sem adicionar ao mapa inicialmente)
 loadGeoJSON('ARQUIVO JGESON/BAIRROS.geojson', {
-	style: function(feature) {
-		return {
-			color: '#c9a000',
-			weight: 2,
-			opacity: 0.9,
-			fillColor: '#f0c000',
-			fillOpacity: 0.25
-		};
+	style: {
+		color: '#ffcc00',
+		weight: 3,
+		opacity: 1,
+		fillColor: '#ffeb3b',
+		fillOpacity: 0.35
 	}
 }).then(layer => {
 	if (layer) {
@@ -645,12 +643,10 @@ loadGeoJSON('ARQUIVO JGESON/REDE DE ÁGUA.geojson', {
 
 // Carrega REDE DE ESGOTO (linhas) — desmarcada por padrão (arquivo grande)
 loadGeoJSON('ARQUIVO JGESON/REDE DE ESGOTO.geojson', {
-	style: function(feature) {
-		return {
-			color: '#e60000',
-			weight: 2,
-			opacity: 0.85
-		};
+	style: {
+		color: '#ff0000',
+		weight: 3,
+		opacity: 1
 	}
 }).then(layer => {
 	if (layer) {
