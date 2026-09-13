@@ -580,11 +580,11 @@ function checkAllLayersLoaded() {
 loadGeoJSON('ARQUIVO JGESON/BAIRROS.geojson', {
 	style: function(feature) {
 		return {
-			color: '#007a33',
+			color: '#c9a000',
 			weight: 2,
-			opacity: 0.8,
-			fillColor: '#00aa44',
-			fillOpacity: 0.2
+			opacity: 0.9,
+			fillColor: '#f0c000',
+			fillOpacity: 0.25
 		};
 	}
 }).then(layer => {
