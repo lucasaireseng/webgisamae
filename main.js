@@ -36,7 +36,10 @@ let layerGroups = {
 	'agua': null,
 	'esgoto': null,
 	'geral': null,
-	'bairros': null
+	'bairros': null,
+	'bacias': null,
+	'rede-agua': null,
+	'rede-esgoto': null
 };
 
 // Flag para controlar se as camadas foram carregadas
@@ -44,7 +47,10 @@ let layersLoaded = {
 	'agua': false,
 	'esgoto': false,
 	'geral': false,
-	'bairros': false
+	'bairros': false,
+	'bacias': false,
+	'rede-agua': false,
+	'rede-esgoto': false
 };
 
 // Função para alternar basemap
@@ -268,6 +274,21 @@ document.addEventListener('DOMContentLoaded', function() {
 		console.log('Checkbox BAIRROS alterado:', this.checked);
 		toggleLayer('bairros', this.checked);
 	});
+
+	document.getElementById('layer-bacias').addEventListener('change', function() {
+		console.log('Checkbox BACIAS alterado:', this.checked);
+		toggleLayer('bacias', this.checked);
+	});
+
+	document.getElementById('layer-rede-agua').addEventListener('change', function() {
+		console.log('Checkbox REDE DE ÁGUA alterado:', this.checked);
+		toggleLayer('rede-agua', this.checked);
+	});
+
+	document.getElementById('layer-rede-esgoto').addEventListener('change', function() {
+		console.log('Checkbox REDE DE ESGOTO alterado:', this.checked);
+		toggleLayer('rede-esgoto', this.checked);
+	});
 });
 
 // Escala
@@ -375,6 +396,9 @@ function getLayerName(layer) {
 	if (layer === layerGroups['esgoto']) return 'ESGOTO';
 	if (layer === layerGroups['geral']) return 'GERAL';
 	if (layer === layerGroups['bairros']) return 'BAIRROS';
+	if (layer === layerGroups['bacias']) return 'BACIAS DE ABASTECIMENTO';
+	if (layer === layerGroups['rede-agua']) return 'REDE DE ÁGUA';
+	if (layer === layerGroups['rede-esgoto']) return 'REDE DE ESGOTO';
 	return 'Desconhecida';
 }
 
@@ -556,11 +580,11 @@ function checkAllLayersLoaded() {
 loadGeoJSON('ARQUIVO JGESON/BAIRROS.geojson', {
 	style: function(feature) {
 		return {
-			color: '#0066cc',
+			color: '#3388ff',
 			weight: 2,
 			opacity: 0.8,
-			fillColor: '#0066cc',
-			fillOpacity: 0.3
+			fillColor: '#3388ff',
+			fillOpacity: 0.2
 		};
 	}
 }).then(layer => {
@@ -575,46 +599,69 @@ loadGeoJSON('ARQUIVO JGESON/BAIRROS.geojson', {
 	}
 });
 
-// Camadas PV e REDE removidas para otimizar performance no GitHub Pages
-// (Arquivos muito grandes: PV com 31.060 features, REDE com 128.739 features)
+// Carrega BACIAS DE ABASTECIMENTO (polígonos)
+loadGeoJSON('ARQUIVO JGESON/BACIAS DE ABASTECIMENTO.geojson', {
+	style: function(feature) {
+		return {
+			color: '#007a99',
+			weight: 2,
+			opacity: 0.9,
+			fillColor: '#00aacc',
+			fillOpacity: 0.25
+		};
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['bacias'] = layer;
+		layersLoaded['bacias'] = true;
+		console.log('Camada BACIAS DE ABASTECIMENTO carregada (não ativa)');
+		console.log('Features na camada BACIAS:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('Falha ao carregar camada BACIAS DE ABASTECIMENTO');
+	}
+});
+
+// Carrega REDE DE ÁGUA (linhas) — desmarcada por padrão (arquivo grande)
+loadGeoJSON('ARQUIVO JGESON/REDE DE ÁGUA.geojson', {
+	style: function(feature) {
+		return {
+			color: '#0099ff',
+			weight: 2,
+			opacity: 0.85
+		};
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['rede-agua'] = layer;
+		layersLoaded['rede-agua'] = true;
+		console.log('Camada REDE DE ÁGUA carregada (não ativa)');
+		console.log('Features na camada REDE DE ÁGUA:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('Falha ao carregar camada REDE DE ÁGUA');
+	}
+});
+
+// Carrega REDE DE ESGOTO (linhas) — desmarcada por padrão (arquivo grande)
+loadGeoJSON('ARQUIVO JGESON/REDE DE ESGOTO.geojson', {
+	style: function(feature) {
+		return {
+			color: '#8b4513',
+			weight: 2,
+			opacity: 0.85
+		};
+	}
+}).then(layer => {
+	if (layer) {
+		layerGroups['rede-esgoto'] = layer;
+		layersLoaded['rede-esgoto'] = true;
+		console.log('Camada REDE DE ESGOTO carregada (não ativa)');
+		console.log('Features na camada REDE DE ESGOTO:', layer.getLayers().length);
+		checkAllLayersLoaded();
+	} else {
+		console.error('Falha ao carregar camada REDE DE ESGOTO');
+	}
+});
 
 console.log('Carregamento iniciado');
-console.log('Verificando se todas as camadas foram carregadas...');
-
-// Verifica o status após 5 segundos
-setTimeout(() => {
-	console.log('Status das camadas após 5 segundos:');
-	console.log('Layers loaded:', layersLoaded);
-	console.log('Layer groups:', Object.keys(layerGroups).map(key => `${key}: ${layerGroups[key] ? 'OK' : 'NULL'}`));
-	
-	// Força o carregamento da camada GERAL se não foi carregada
-	if (!layersLoaded['geral']) {
-		console.log('⚠️ Camada GERAL não foi carregada, tentando novamente...');
-		loadGeoJSON('ARQUIVO JGESON/GERAL.geojson', {
-			pointToLayer: (feature, latlng) => {
-				const marker = L.circleMarker(latlng, {
-					radius: 6,
-					fillColor: '#00cc66',
-					color: '#007a3d',
-					weight: 2,
-					opacity: 1,
-					fillOpacity: 0.8
-				});
-				
-				marker.on('click', function(e) {
-					e.originalEvent.stopPropagation();
-					marker.openPopup();
-				});
-				
-				return marker;
-			}
-		}).then(layer => {
-			if (layer) {
-				layerGroups['geral'] = layer;
-				layersLoaded['geral'] = true;
-				layer.addTo(map);
-				console.log('✅ Camada GERAL carregada com sucesso!');
-			}
-		});
-	}
-}, 5000);

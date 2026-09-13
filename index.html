@@ -3,30 +3,9 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>WebGIS AMAE - Rio Verde/GO</title>
-	<meta name="description" content="Sistema de Informações Geográficas da AMAE - Agência Municipal de Água e Esgoto de Rio Verde/GO">
-	<meta name="keywords" content="WebGIS, AMAE, Rio Verde, Goiás, Água, Esgoto, Mapa, Geografia">
-	<meta name="author" content="AMAE Rio Verde">
-	
-	<!-- Open Graph / Facebook -->
-	<meta property="og:type" content="website">
-	<meta property="og:url" content="https://lucasaireseng.github.io/webgisamae/">
-	<meta property="og:title" content="WebGIS AMAE - Rio Verde/GO">
-	<meta property="og:description" content="Sistema de Informações Geográficas da AMAE">
-	<meta property="og:image" content="https://lucasaireseng.github.io/webgisamae/LOGO/AMAEGIS.jpg">
-
-	<!-- Twitter -->
-	<meta property="twitter:card" content="summary_large_image">
-	<meta property="twitter:url" content="https://lucasaireseng.github.io/webgisamae/">
-	<meta property="twitter:title" content="WebGIS AMAE - Rio Verde/GO">
-	<meta property="twitter:description" content="Sistema de Informações Geográficas da AMAE">
-	<meta property="twitter:image" content="https://lucasaireseng.github.io/webgisamae/LOGO/AMAEGIS.jpg">
-	
+	<title>WebGIS AMAE - Leaflet</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 	<link rel="stylesheet" href="styles.css">
-	
-	<!-- Favicon -->
-	<link rel="icon" type="image/jpeg" href="LOGO/AMAEGIS.jpg">
 </head>
 <body>
 	<!-- Cabeçalho com logos -->
@@ -91,7 +70,22 @@
 					<label class="layer-item">
 						<input type="checkbox" id="layer-bairros">
 						<span class="layer-name">BAIRROS</span>
-						<span class="layer-color" style="background-color: #0066cc;"></span>
+						<span class="layer-color" style="background-color: #3388ff;"></span>
+					</label>
+					<label class="layer-item">
+						<input type="checkbox" id="layer-bacias">
+						<span class="layer-name">BACIAS DE ABASTECIMENTO</span>
+						<span class="layer-color" style="background-color: #00aacc;"></span>
+					</label>
+					<label class="layer-item">
+						<input type="checkbox" id="layer-rede-agua">
+						<span class="layer-name">REDE DE ÁGUA</span>
+						<span class="layer-color" style="background-color: #0099ff;"></span>
+					</label>
+					<label class="layer-item">
+						<input type="checkbox" id="layer-rede-esgoto">
+						<span class="layer-name">REDE DE ESGOTO</span>
+						<span class="layer-color" style="background-color: #8b4513;"></span>
 					</label>
 				</div>
 			</div>
@@ -102,12 +96,8 @@
 	<!-- Mapa -->
 	<div id="map"></div>
 
-	<!-- Footer -->
-	<footer style="position: fixed; bottom: 0; right: 0; background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; font-size: 12px; z-index: 1000;">
-		AMAE Rio Verde/GO - WebGIS v1.0
-	</footer>
-
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 	<script src="main.js"></script>
 </body>
 </html>
+
