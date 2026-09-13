@@ -580,10 +580,10 @@ function checkAllLayersLoaded() {
 loadGeoJSON('ARQUIVO JGESON/BAIRROS.geojson', {
 	style: function(feature) {
 		return {
-			color: '#3388ff',
+			color: '#007a33',
 			weight: 2,
 			opacity: 0.8,
-			fillColor: '#3388ff',
+			fillColor: '#00aa44',
 			fillOpacity: 0.2
 		};
 	}
@@ -647,7 +647,7 @@ loadGeoJSON('ARQUIVO JGESON/REDE DE ÁGUA.geojson', {
 loadGeoJSON('ARQUIVO JGESON/REDE DE ESGOTO.geojson', {
 	style: function(feature) {
 		return {
-			color: '#8b4513',
+			color: '#e60000',
 			weight: 2,
 			opacity: 0.85
 		};
