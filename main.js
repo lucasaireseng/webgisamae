@@ -232,15 +232,93 @@ function setMapLimits() {
 
 // Event listeners para a sidebar
 document.addEventListener('DOMContentLoaded', function() {
-	// Toggle da sidebar
 	const toggleBtn = document.getElementById('toggle-sidebar');
+	const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 	const sidebar = document.getElementById('sidebar');
 	const mapDiv = document.getElementById('map');
-	
-	toggleBtn.addEventListener('click', function() {
-		sidebar.classList.toggle('collapsed');
-		mapDiv.classList.toggle('sidebar-collapsed');
+	const overlay = document.getElementById('sidebar-overlay');
+
+	function isMobile() {
+		return window.matchMedia('(max-width: 768px)').matches;
+	}
+
+	function refreshMapSize() {
+		setTimeout(function() {
+			map.invalidateSize();
+		}, 320);
+	}
+
+	function setSidebarOpen(open) {
+		if (open) {
+			sidebar.classList.remove('collapsed');
+			mapDiv.classList.remove('sidebar-collapsed');
+			if (overlay) {
+				if (isMobile()) {
+					overlay.classList.add('visible');
+					overlay.setAttribute('aria-hidden', 'false');
+				} else {
+					overlay.classList.remove('visible');
+					overlay.setAttribute('aria-hidden', 'true');
+				}
+			}
+			if (mobileMenuBtn) {
+				mobileMenuBtn.style.display = 'none';
+			}
+		} else {
+			sidebar.classList.add('collapsed');
+			mapDiv.classList.add('sidebar-collapsed');
+			if (overlay) {
+				overlay.classList.remove('visible');
+				overlay.setAttribute('aria-hidden', 'true');
+			}
+			if (mobileMenuBtn) {
+				mobileMenuBtn.style.display = isMobile() ? 'block' : 'none';
+			}
+		}
+		refreshMapSize();
+	}
+
+	function toggleSidebar() {
+		const willOpen = sidebar.classList.contains('collapsed');
+		setSidebarOpen(willOpen);
+	}
+
+	// No celular: menu fechado para o mapa aparecer; no desktop: menu aberto
+	if (isMobile()) {
+		setSidebarOpen(false);
+	} else {
+		setSidebarOpen(true);
+	}
+
+	toggleBtn.addEventListener('click', toggleSidebar);
+	if (mobileMenuBtn) {
+		mobileMenuBtn.addEventListener('click', function() {
+			setSidebarOpen(true);
+		});
+	}
+	if (overlay) {
+		overlay.addEventListener('click', function() {
+			setSidebarOpen(false);
+		});
+	}
+
+	window.addEventListener('resize', function() {
+		if (isMobile()) {
+			if (!sidebar.classList.contains('collapsed')) {
+				// mantém estado, só recalcula mapa
+			} else {
+				mobileMenuBtn.style.display = 'block';
+			}
+		} else {
+			if (mobileMenuBtn) mobileMenuBtn.style.display = 'none';
+			if (overlay) overlay.classList.remove('visible');
+		}
+		refreshMapSize();
 	});
+
+	// Garante que o Leaflet desenhe o mapa após o layout carregar
+	refreshMapSize();
+	window.addEventListener('load', refreshMapSize);
 	
 	// Controle de basemaps
 		document.querySelectorAll('input[name="basemap"]').forEach(radio => {
