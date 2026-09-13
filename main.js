@@ -11,6 +11,12 @@ const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y
 	attribution: '&copy; <a href="https://www.google.com/maps">Google Satellite</a>'
 });
 
+// Google Satellite Hybrid (satélite + nomes de ruas)
+const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+	maxZoom: 20,
+	attribution: '&copy; <a href="https://www.google.com/maps">Google Satellite Hybrid</a>'
+});
+
 // ESRI World Imagery
 const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
 	maxZoom: 19,
@@ -28,6 +34,7 @@ const map = L.map('map', {
 const baseMaps = {
 	"Google Maps": googleMaps,
 	"Google Satélite": googleSatellite,
+	"Google Hybrid": googleHybrid,
 	"ESRI Satélite": esriImagery
 };
 
@@ -327,13 +334,16 @@ document.addEventListener('DOMContentLoaded', function() {
 	window.addEventListener('load', refreshMapSize);
 	
 	// Controle de basemaps
+		const basemapLabels = {
+			google: 'Google Maps',
+			satellite: 'Google Satélite',
+			hybrid: 'Google Hybrid',
+			esri: 'ESRI Satélite'
+		};
 		document.querySelectorAll('input[name="basemap"]').forEach(radio => {
 			radio.addEventListener('change', function() {
 				if (this.checked) {
-					const basemapName = this.value === 'google' ? 'Google Maps' : 
-									   this.value === 'satellite' ? 'Google Satélite' : 
-									   'ESRI Satélite';
-					changeBasemap(basemapName);
+					changeBasemap(basemapLabels[this.value] || 'Google Satélite');
 				}
 			});
 		});
