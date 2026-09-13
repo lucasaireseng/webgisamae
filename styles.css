@@ -425,6 +425,15 @@ html, body {
 		top: 76px;
 	}
 
+	/* Evita sobreposição do zoom (+/-) com o botão ☰ */
+	.leaflet-top.leaflet-left {
+		top: 56px;
+	}
+
+	.leaflet-control-zoom {
+		margin-top: 0;
+	}
+
 	#sidebar {
 		top: 64px;
 		width: min(86vw, 320px);
