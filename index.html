@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>WebGIS AMAE - Leaflet</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-	<link rel="stylesheet" href="styles.css?v=20260913z">
+	<link rel="stylesheet" href="styles.css?v=20260913d">
 </head>
 <body>
 	<!-- Cabeçalho com logos -->
@@ -19,6 +19,7 @@
 				<h1>WebGIS AMAE</h1>
 				<p>Sistema de Informações Geográficas - Rio Verde/GO</p>
 			</div>
+			<a href="dashboard.html" class="header-action-btn" title="Abrir Dashboard da camada GERAL">Dashboard</a>
 		</div>
 	</header>
 
@@ -33,6 +34,11 @@
 			<button id="toggle-sidebar" class="toggle-btn" type="button" aria-label="Fechar camadas">☰</button>
 		</div>
 		<div class="sidebar-content">
+			<div class="layer-group">
+				<h3>Ferramentas</h3>
+				<a href="dashboard.html" class="sidebar-link-btn">Dashboard GERAL</a>
+			</div>
+
 			<!-- Mapas de Fundo -->
 			<div class="layer-group">
 				<h3>Mapas de Fundo</h3>
@@ -105,7 +111,7 @@
 	<div id="map" class="sidebar-collapsed"></div>
 
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-	<script src="main.js?v=20260913z"></script>
+	<script src="main.js?v=20260913d"></script>
 </body>
 </html>
 

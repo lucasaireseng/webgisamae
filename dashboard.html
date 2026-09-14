@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<title>Dashboard AMAE - Camada GERAL</title>
+	<link rel="stylesheet" href="dashboard.css?v=20260913d">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-page">
+	<header id="header">
+		<div class="header-content">
+			<div class="logo-container">
+				<img src="LOGO/LOGO RIO VERDE.png" alt="Logo Rio Verde" class="logo logo-rio-verde">
+				<img src="LOGO/AMAEGIS.jpg" alt="Logo AMAEGIS" class="logo logo-amaegis">
+			</div>
+			<div class="header-title">
+				<h1>Dashboard AMAE</h1>
+				<p>Análise da camada GERAL — Rio Verde/GO</p>
+			</div>
+			<a href="index.html" class="header-action-btn" title="Voltar ao WebGIS">WebGIS</a>
+		</div>
+	</header>
+
+	<main class="dashboard-main">
+		<section class="kpi-row" id="kpi-row">
+			<article class="kpi-card">
+				<span class="kpi-label">Total de Registros</span>
+				<strong class="kpi-value" id="kpi-total">—</strong>
+			</article>
+			<article class="kpi-card">
+				<span class="kpi-label">Bairros</span>
+				<strong class="kpi-value" id="kpi-bairros">—</strong>
+			</article>
+			<article class="kpi-card">
+				<span class="kpi-label">Assuntos</span>
+				<strong class="kpi-value" id="kpi-assuntos">—</strong>
+			</article>
+			<article class="kpi-card">
+				<span class="kpi-label">Solicitantes</span>
+				<strong class="kpi-value" id="kpi-solicitantes">—</strong>
+			</article>
+		</section>
+
+		<p id="dashboard-status" class="dashboard-status">Carregando dados da camada GERAL…</p>
+
+		<section class="charts-grid">
+			<article class="chart-card">
+				<h2>Distribuição por Tema</h2>
+				<p class="chart-hint">Gráfico de pizza</p>
+				<div class="chart-wrap">
+					<canvas id="chart-tema"></canvas>
+				</div>
+			</article>
+
+			<article class="chart-card">
+				<h2>Registros por Assunto</h2>
+				<p class="chart-hint">Gráfico de barras</p>
+				<div class="chart-wrap">
+					<canvas id="chart-assunto"></canvas>
+				</div>
+			</article>
+
+			<article class="chart-card chart-card-wide">
+				<h2>Top 15 Bairros</h2>
+				<p class="chart-hint">Gráfico de barras horizontais</p>
+				<div class="chart-wrap chart-wrap-tall">
+					<canvas id="chart-bairro"></canvas>
+				</div>
+			</article>
+
+			<article class="chart-card">
+				<h2>Solicitantes</h2>
+				<p class="chart-hint">Gráfico de rosca (doughnut)</p>
+				<div class="chart-wrap">
+					<canvas id="chart-solicitante"></canvas>
+				</div>
+			</article>
+
+			<article class="chart-card">
+				<h2>Tema × Assunto</h2>
+				<p class="chart-hint">Gráfico de barras empilhadas</p>
+				<div class="chart-wrap">
+					<canvas id="chart-tema-assunto"></canvas>
+				</div>
+			</article>
+		</section>
+
+		<section class="table-section">
+			<h2>Resumo por Bairro</h2>
+			<div class="table-scroll">
+				<table id="table-bairros">
+					<thead>
+						<tr>
+							<th>Bairro</th>
+							<th>Total</th>
+							<th>Água</th>
+							<th>Esgoto</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</section>
+	</main>
+
+	<script src="dashboard.js?v=20260913d"></script>
+</body>
+</html>

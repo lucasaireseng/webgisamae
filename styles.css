@@ -80,6 +80,45 @@ html, body {
 	font-weight: 300;
 }
 
+.header-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 16px;
+	background: #444444;
+	color: #ffffff;
+	text-decoration: none;
+	border-radius: 6px;
+	border: 1px solid #666666;
+	font-size: 14px;
+	font-weight: 600;
+	white-space: nowrap;
+	transition: background 0.2s ease;
+	flex-shrink: 0;
+}
+
+.header-action-btn:hover {
+	background: #666666;
+}
+
+.sidebar-link-btn {
+	display: block;
+	text-align: center;
+	padding: 12px;
+	background: rgba(0, 204, 102, 0.18);
+	border: 1px solid #00cc66;
+	color: #ffffff;
+	text-decoration: none;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	transition: background 0.2s ease;
+}
+
+.sidebar-link-btn:hover {
+	background: rgba(0, 204, 102, 0.3);
+}
+
 /* Botão flutuante (mobile) */
 .mobile-menu-btn {
 	display: none;
@@ -418,6 +457,11 @@ html, body {
 
 	.header-title p {
 		display: none;
+	}
+
+	.header-action-btn {
+		padding: 8px 10px;
+		font-size: 12px;
 	}
 
 	.mobile-menu-btn {
