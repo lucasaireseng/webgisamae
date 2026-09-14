@@ -307,24 +307,87 @@ function renderBairroChart(records) {
 	});
 }
 
-function renderSolicitanteChart(records) {
-	const entries = sortEntries(countBy(records, 'Solicitante'));
-	new Chart(document.getElementById('chart-solicitante'), {
-		type: 'doughnut',
+function filterLast30Days(records, referenceDate = new Date()) {
+	const end = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), 23, 59, 59, 999);
+	const start = new Date(end);
+	start.setDate(start.getDate() - 29);
+	start.setHours(0, 0, 0, 0);
+
+	const filtered = records.filter(item => {
+		const date = parseDate(getDateField(item));
+		return date && date >= start && date <= end;
+	});
+
+	return { filtered, start, end };
+}
+
+function formatDayLabel(date) {
+	return date.toLocaleDateString('pt-BR');
+}
+
+function renderLast30DaysBairroChart(records) {
+	const { filtered, start, end } = filterLast30Days(records);
+	const periodEl = document.getElementById('last30-period');
+	if (periodEl) {
+		periodEl.textContent =
+			`De ${formatDayLabel(start)} a ${formatDayLabel(end)} · ${filtered.length} registro(s)`;
+	}
+
+	const entries = sortEntries(countBy(filtered, 'Bairro'), 15).reverse();
+	const canvas = document.getElementById('chart-bairro-30dias');
+
+	if (!filtered.length) {
+		new Chart(canvas, {
+			type: 'bar',
+			data: {
+				labels: ['Sem dados'],
+				datasets: [{ data: [0], backgroundColor: '#444444' }]
+			},
+			options: {
+				indexAxis: 'y',
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: { legend: { display: false } },
+				scales: {
+					x: { beginAtZero: true, ticks: { color: '#cccccc' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+					y: { ticks: { color: '#cccccc' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+				}
+			}
+		});
+		return;
+	}
+
+	new Chart(canvas, {
+		type: 'bar',
 		data: {
 			labels: entries.map(([label]) => label),
 			datasets: [{
+				label: 'Ocorrências (30 dias)',
 				data: entries.map(([, value]) => value),
-				backgroundColor: colorsFor(entries.length),
-				borderColor: '#1a1a1a',
-				borderWidth: 2
+				backgroundColor: '#0099ff',
+				borderColor: '#0066cc',
+				borderWidth: 1
 			}]
 		},
 		options: {
+			indexAxis: 'y',
 			responsive: true,
 			maintainAspectRatio: false,
-			plugins: chartDefaults.plugins,
-			cutout: '55%'
+			plugins: {
+				...chartDefaults.plugins,
+				legend: { display: false }
+			},
+			scales: {
+				x: {
+					beginAtZero: true,
+					ticks: { color: '#cccccc', precision: 0 },
+					grid: { color: 'rgba(255,255,255,0.08)' }
+				},
+				y: {
+					ticks: { color: '#cccccc' },
+					grid: { color: 'rgba(255,255,255,0.05)' }
+				}
+			}
 		}
 	});
 }
@@ -421,7 +484,7 @@ async function initDashboard() {
 		renderTemaChart(records);
 		renderAssuntoChart(records);
 		renderBairroChart(records);
-		renderSolicitanteChart(records);
+		renderLast30DaysBairroChart(records);
 		renderTemaAssuntoChart(records);
 		renderBairroTable(records);
 

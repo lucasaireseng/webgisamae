@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Dashboard AMAE - Camada GERAL</title>
-	<link rel="stylesheet" href="dashboard.css?v=20260913f">
+	<link rel="stylesheet" href="dashboard.css?v=20260913g">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="dashboard-page">
@@ -109,10 +109,10 @@
 			</article>
 
 			<article class="chart-card">
-				<h2>Solicitantes</h2>
-				<p class="chart-hint">Gráfico de rosca (doughnut)</p>
-				<div class="chart-wrap">
-					<canvas id="chart-solicitante"></canvas>
+				<h2>Recorrência — Últimos 30 dias</h2>
+				<p class="chart-hint" id="last30-period">Bairros com mais ocorrências (Data de Abertura)</p>
+				<div class="chart-wrap chart-wrap-tall">
+					<canvas id="chart-bairro-30dias"></canvas>
 				</div>
 			</article>
 
@@ -143,6 +143,6 @@
 		</section>
 	</main>
 
-	<script src="dashboard.js?v=20260913f"></script>
+	<script src="dashboard.js?v=20260913g"></script>
 </body>
 </html>
