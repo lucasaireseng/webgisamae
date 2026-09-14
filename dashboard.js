@@ -1,4 +1,4 @@
-const GEOJSON_URL = 'ARQUIVO JGESON/GERAL.geojson';
+const GEOJSON_URL = encodeURI('ARQUIVO JGESON/GERAL.geojson');
 
 const PALETTE = [
 	'#00cc66', '#0099ff', '#ffcc00', '#ff6600', '#cc66ff',
@@ -29,6 +29,12 @@ const chartDefaults = {
 Chart.defaults.color = '#cccccc';
 Chart.defaults.font.family = "'Times New Roman', Times, serif";
 Chart.defaults.borderColor = '#444444';
+
+function cleanText(value) {
+	if (value === null || value === undefined) return 'Não informado';
+	const text = String(value).replace(/\s+/g, ' ').trim();
+	return text || 'Não informado';
+}
 
 function getDateField(properties) {
 	if (!properties) return null;
@@ -422,7 +428,7 @@ async function initDashboard() {
 		setStatus(`Dados carregados: ${records.length.toLocaleString('pt-BR')} registros da camada GERAL.`);
 	} catch (error) {
 		console.error(error);
-		setStatus('Erro ao carregar a camada GERAL. Verifique o arquivo GeoJSON.', true);
+		setStatus(`Erro no Dashboard: ${error.message}`, true);
 	}
 }
 
