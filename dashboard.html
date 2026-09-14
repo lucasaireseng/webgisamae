@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Dashboard AMAE - Camada GERAL</title>
-	<link rel="stylesheet" href="dashboard.css?v=20260913d">
+	<link rel="stylesheet" href="dashboard.css?v=20260913e">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="dashboard-page">
@@ -43,6 +43,45 @@
 		</section>
 
 		<p id="dashboard-status" class="dashboard-status">Carregando dados da camada GERAL…</p>
+
+		<section class="priority-section">
+			<div class="priority-header">
+				<div>
+					<h2>Recorrência por Bairro — Último Mês</h2>
+					<p class="chart-hint" id="last-month-period">Período de referência em carregamento…</p>
+				</div>
+				<article class="kpi-card kpi-card-inline">
+					<span class="kpi-label">Registros no mês</span>
+					<strong class="kpi-value" id="kpi-last-month">—</strong>
+				</article>
+			</div>
+			<div class="charts-grid priority-grid">
+				<article class="chart-card">
+					<h2>Bairros com mais ocorrências</h2>
+					<p class="chart-hint">Prioridade para planejamento da fiscalização</p>
+					<div class="chart-wrap chart-wrap-tall">
+						<canvas id="chart-bairro-mes"></canvas>
+					</div>
+				</article>
+				<article class="chart-card">
+					<h2>Ranking do mês</h2>
+					<p class="chart-hint">Lista ordenada por recorrência</p>
+					<div class="table-scroll ranking-scroll">
+						<table id="table-bairro-mes">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>Bairro</th>
+									<th>Ocorrências</th>
+									<th>%</th>
+								</tr>
+							</thead>
+							<tbody></tbody>
+						</table>
+					</div>
+				</article>
+			</div>
+		</section>
 
 		<section class="charts-grid">
 			<article class="chart-card">
@@ -104,6 +143,6 @@
 		</section>
 	</main>
 
-	<script src="dashboard.js?v=20260913d"></script>
+	<script src="dashboard.js?v=20260913e"></script>
 </body>
 </html>

@@ -30,10 +30,141 @@ Chart.defaults.color = '#cccccc';
 Chart.defaults.font.family = "'Times New Roman', Times, serif";
 Chart.defaults.borderColor = '#444444';
 
-function cleanText(value) {
-	if (value === null || value === undefined) return 'Não informado';
-	const text = String(value).replace(/\s+/g, ' ').trim();
-	return text || 'Não informado';
+function getDateField(properties) {
+	if (!properties) return null;
+	if (properties['Data de\nAbertura'] !== undefined) return properties['Data de\nAbertura'];
+	if (properties['Data de Abertura'] !== undefined) return properties['Data de Abertura'];
+	const key = Object.keys(properties).find(k => /data.*abertura/i.test(k.replace(/\s+/g, ' ')));
+	return key ? properties[key] : null;
+}
+
+function parseDate(value) {
+	const text = String(value || '').trim();
+	if (!text || text === '-') return null;
+	const formats = [
+		/^(\d{4})-(\d{2})-(\d{2})/,
+		/^(\d{4})\/(\d{2})\/(\d{2})/,
+		/^(\d{2})\/(\d{2})\/(\d{4})/,
+		/^(\d{2})-(\d{2})-(\d{4})/
+	];
+
+	for (const format of formats) {
+		const match = text.match(format);
+		if (!match) continue;
+		let year;
+		let month;
+		let day;
+		if (format.source.startsWith('^(\\d{4})')) {
+			year = Number(match[1]);
+			month = Number(match[2]);
+			day = Number(match[3]);
+		} else {
+			day = Number(match[1]);
+			month = Number(match[2]);
+			year = Number(match[3]);
+		}
+		const date = new Date(year, month - 1, day);
+		if (!Number.isNaN(date.getTime())) return date;
+	}
+	return null;
+}
+
+function getPreviousMonthRange(referenceDate = new Date()) {
+	const year = referenceDate.getFullYear();
+	const month = referenceDate.getMonth(); // 0-11 current
+	const start = new Date(year, month - 1, 1);
+	const end = new Date(year, month, 0, 23, 59, 59, 999); // last day of previous month
+	return { start, end };
+}
+
+function formatMonthLabel(date) {
+	const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+	return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function filterLastMonth(records) {
+	const { start, end } = getPreviousMonthRange(new Date());
+	const filtered = records.filter(item => {
+		const date = parseDate(getDateField(item));
+		return date && date >= start && date <= end;
+	});
+	return { filtered, start, end };
+}
+
+function renderLastMonthAnalysis(records) {
+	const { filtered, start } = filterLastMonth(records);
+	const periodLabel = formatMonthLabel(start);
+	document.getElementById('last-month-period').textContent =
+		`Período: ${periodLabel} (mês civil anterior ao atual)`;
+	document.getElementById('kpi-last-month').textContent = filtered.length.toLocaleString('pt-BR');
+
+	const entries = sortEntries(countBy(filtered, 'Bairro'));
+	const topEntries = entries.slice(0, 15).reverse();
+	const total = filtered.length || 1;
+
+	const canvas = document.getElementById('chart-bairro-mes');
+	if (!filtered.length) {
+		document.querySelector('#table-bairro-mes tbody').innerHTML =
+			'<tr><td colspan="4">Nenhum registro encontrado no último mês.</td></tr>';
+		new Chart(canvas, {
+			type: 'bar',
+			data: { labels: ['Sem dados'], datasets: [{ data: [0], backgroundColor: '#444444' }] },
+			options: {
+				indexAxis: 'y',
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: { legend: { display: false } },
+				scales: {
+					x: { beginAtZero: true, ticks: { color: '#cccccc' }, grid: { color: 'rgba(255,255,255,0.08)' } },
+					y: { ticks: { color: '#cccccc' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+				}
+			}
+		});
+		return;
+	}
+
+	new Chart(canvas, {
+		type: 'bar',
+		data: {
+			labels: topEntries.map(([label]) => label),
+			datasets: [{
+				label: 'Ocorrências',
+				data: topEntries.map(([, value]) => value),
+				backgroundColor: '#00cc66',
+				borderColor: '#007a3d',
+				borderWidth: 1
+			}]
+		},
+		options: {
+			indexAxis: 'y',
+			responsive: true,
+			maintainAspectRatio: false,
+			plugins: {
+				...chartDefaults.plugins,
+				legend: { display: false }
+			},
+			scales: {
+				x: {
+					beginAtZero: true,
+					ticks: { color: '#cccccc', precision: 0 },
+					grid: { color: 'rgba(255,255,255,0.08)' }
+				},
+				y: {
+					ticks: { color: '#cccccc' },
+					grid: { color: 'rgba(255,255,255,0.05)' }
+				}
+			}
+		}
+	});
+
+	document.querySelector('#table-bairro-mes tbody').innerHTML = entries.map(([bairro, count], index) => `
+		<tr>
+			<td>${index + 1}</td>
+			<td>${bairro}</td>
+			<td>${count}</td>
+			<td>${((count / total) * 100).toFixed(1).replace('.', ',')}%</td>
+		</tr>
+	`).join('');
 }
 
 function countBy(records, key) {
@@ -280,6 +411,7 @@ async function initDashboard() {
 		}
 
 		renderKpis(records);
+		renderLastMonthAnalysis(records);
 		renderTemaChart(records);
 		renderAssuntoChart(records);
 		renderBairroChart(records);

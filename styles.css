@@ -14,7 +14,7 @@ html, body {
 	top: 0;
 	left: 0;
 	right: 0;
-	height: 80px;
+	height: 110px;
 	background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
 	color: #ffffff;
 	z-index: 1001;
@@ -39,7 +39,7 @@ html, body {
 }
 
 .logo {
-	height: 60px;
+	height: 88px;
 	width: auto;
 	object-fit: contain;
 	transition: transform 0.3s ease;
@@ -50,12 +50,12 @@ html, body {
 }
 
 .logo-rio-verde {
-	max-width: 120px;
+	max-width: 170px;
 	order: 2;
 }
 
 .logo-amaegis {
-	max-width: 100px;
+	max-width: 150px;
 	order: 1;
 }
 
@@ -67,7 +67,7 @@ html, body {
 
 .header-title h1 {
 	margin: 0;
-	font-size: 28px;
+	font-size: 30px;
 	font-weight: 700;
 	color: #ffffff;
 	text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
@@ -123,7 +123,7 @@ html, body {
 .mobile-menu-btn {
 	display: none;
 	position: fixed;
-	top: 90px;
+	top: 122px;
 	left: 12px;
 	z-index: 1100;
 	background: #444444;
@@ -157,11 +157,11 @@ html, body {
 /* Barra lateral */
 #sidebar {
 	position: fixed;
-	top: 80px;
+	top: 110px;
 	left: 0;
 	width: 300px;
-	height: calc(100vh - 80px);
-	height: calc(100dvh - 80px);
+	height: calc(100vh - 110px);
+	height: calc(100dvh - 110px);
 	background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
 	color: #ffffff;
 	z-index: 1000;
@@ -277,13 +277,13 @@ html, body {
 /* Mapa */
 #map {
 	position: fixed;
-	top: 80px;
+	top: 110px;
 	right: 0;
 	bottom: 0;
 	left: 300px;
 	width: calc(100% - 300px);
-	height: calc(100% - 80px);
-	height: calc(100dvh - 80px);
+	height: calc(100% - 110px);
+	height: calc(100dvh - 110px);
 	z-index: 1;
 	transition: left 0.3s ease, width 0.3s ease;
 	background: #111111;
@@ -419,7 +419,7 @@ html, body {
 /* Responsividade */
 @media (max-width: 768px) {
 	#header {
-		height: 64px;
+		height: 84px;
 	}
 
 	.header-content {
@@ -434,15 +434,15 @@ html, body {
 	}
 
 	.logo {
-		height: 40px;
+		height: 58px;
 	}
 
 	.logo-rio-verde {
-		max-width: 70px;
+		max-width: 100px;
 	}
 
 	.logo-amaegis {
-		max-width: 56px;
+		max-width: 88px;
 	}
 
 	.header-title {
@@ -466,7 +466,7 @@ html, body {
 
 	.mobile-menu-btn {
 		display: block;
-		top: 76px;
+		top: 96px;
 	}
 
 	/* Evita sobreposição do zoom (+/-) com o botão ☰ */
@@ -479,10 +479,10 @@ html, body {
 	}
 
 	#sidebar {
-		top: 64px;
+		top: 84px;
 		width: min(86vw, 320px);
-		height: calc(100vh - 64px);
-		height: calc(100dvh - 64px);
+		height: calc(100vh - 84px);
+		height: calc(100dvh - 84px);
 		transform: translateX(-105%);
 	}
 
@@ -496,13 +496,13 @@ html, body {
 
 	#map,
 	#map.sidebar-collapsed {
-		top: 64px;
+		top: 84px;
 		left: 0;
 		right: 0;
 		bottom: 0;
 		width: 100%;
-		height: calc(100% - 64px);
-		height: calc(100dvh - 64px);
+		height: calc(100% - 84px);
+		height: calc(100dvh - 84px);
 	}
 }
 
