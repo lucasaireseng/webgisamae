@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>WebGIS AMAE - Leaflet</title>
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-	<link rel="stylesheet" href="styles.css?v=20260918heat">
+	<link rel="stylesheet" href="styles.css?v=20260918pdf">
 </head>
 <body>
 	<!-- Cabeçalho com logos -->
@@ -37,6 +37,7 @@
 			<div class="layer-group">
 				<h3>Ferramentas</h3>
 				<a href="dashboard.html" class="sidebar-link-btn">Dashboard</a>
+				<button type="button" id="btn-export-pdf" class="sidebar-link-btn sidebar-export-btn">Exportar PDF</button>
 			</div>
 
 			<!-- Mapas de Fundo -->
@@ -112,7 +113,10 @@
 
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 	<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-	<script src="main.js?v=20260918heat2"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script src="main.js?v=20260918pdf"></script>
+	<script src="export-pdf.js?v=20260918pdf"></script>
 </body>
 </html>
 

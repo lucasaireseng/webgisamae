@@ -122,6 +122,24 @@ html, body {
 	background: rgba(0, 204, 102, 0.3);
 }
 
+.sidebar-export-btn {
+	width: 100%;
+	margin-top: 8px;
+	cursor: pointer;
+	font-family: inherit;
+	background: rgba(0, 153, 255, 0.18);
+	border: 1px solid #0099ff;
+}
+
+.sidebar-export-btn:hover {
+	background: rgba(0, 153, 255, 0.32);
+}
+
+.sidebar-export-btn:disabled {
+	opacity: 0.65;
+	cursor: wait;
+}
+
 /* Botão flutuante (mobile) */
 .mobile-menu-btn {
 	display: none;

@@ -2,24 +2,28 @@
 // Google Maps
 const googleMaps = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
 	maxZoom: 20,
+	crossOrigin: true,
 	attribution: '&copy; <a href="https://www.google.com/maps">Google Maps</a>'
 });
 
 // Google Satellite
 const googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
 	maxZoom: 20,
+	crossOrigin: true,
 	attribution: '&copy; <a href="https://www.google.com/maps">Google Satellite</a>'
 });
 
 // Google Satellite Hybrid (satélite + nomes de ruas)
 const googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
 	maxZoom: 20,
+	crossOrigin: true,
 	attribution: '&copy; <a href="https://www.google.com/maps">Google Satellite Hybrid</a>'
 });
 
 // ESRI World Imagery
 const esriImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
 	maxZoom: 19,
+	crossOrigin: true,
 	attribution: '&copy; <a href="https://www.esri.com/">Esri</a> — Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 });
 
