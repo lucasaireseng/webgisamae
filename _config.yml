@@ -2,8 +2,8 @@
 title: WebGIS AMAE - Rio Verde/GO
 description: Sistema de Informações Geográficas da AMAE
 author: AMAE Rio Verde
-baseurl: "/webgis-amae"  # Substitua pelo nome do seu repositório
-url: "https://seu-usuario.github.io"  # Substitua pelo seu usuário
+baseurl: "/webgisamae"
+url: "https://lucasaireseng.github.io"
 
 # Configurações do site
 markdown: kramdown
@@ -35,5 +35,5 @@ seo:
   type: "WebSite"
   name: "WebGIS AMAE"
   description: "Sistema de Informações Geográficas da AMAE de Rio Verde/GO"
-  url: "https://seu-usuario.github.io/webgis-amae"
+  url: "https://lucasaireseng.github.io/webgisamae"
   image: "/LOGO/AMAEGIS.jpg"
