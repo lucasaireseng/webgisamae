@@ -60,6 +60,78 @@ let layersLoaded = {
 	'rede-esgoto': false
 };
 
+// Mapa de calor (Kernel Density) da camada ESGOTO — criado sob demanda
+let esgotoHeatLayer = null;
+
+function buildEsgotoHeatLayer(geoJsonLayer) {
+	const heatPoints = [];
+
+	geoJsonLayer.eachLayer(function(layer) {
+		if (!layer.getLatLng) return;
+		const latlng = layer.getLatLng();
+		// [lat, lng, intensidade] — intensidade moderada para densidade urbana
+		heatPoints.push([latlng.lat, latlng.lng, 0.65]);
+	});
+
+	// radius/blur calibrados para Rio Verde em zoom ~13
+	return L.heatLayer(heatPoints, {
+		radius: 28,
+		blur: 22,
+		maxZoom: 17,
+		max: 1.0,
+		minOpacity: 0.2,
+		gradient: {
+			0.0: 'rgba(0, 0, 255, 0)',
+			0.2: 'rgba(0, 80, 255, 0.25)',
+			0.4: 'rgba(0, 220, 255, 0.35)',
+			0.55: 'rgba(0, 255, 100, 0.4)',
+			0.7: 'rgba(255, 255, 0, 0.5)',
+			0.85: 'rgba(255, 120, 0, 0.55)',
+			1.0: 'rgba(255, 0, 0, 0.65)'
+		}
+	});
+}
+
+function ensureEsgotoHeatLayer() {
+	if (esgotoHeatLayer || !layerGroups['esgoto']) {
+		return esgotoHeatLayer;
+	}
+	if (typeof L.heatLayer !== 'function') {
+		console.error('Plugin leaflet-heat não carregado.');
+		return null;
+	}
+	esgotoHeatLayer = buildEsgotoHeatLayer(layerGroups['esgoto']);
+	console.log('Mapa de calor ESGOTO processado sob demanda');
+	return esgotoHeatLayer;
+}
+
+function toggleEsgotoHeat(show) {
+	if (!layersLoaded['esgoto'] || !layerGroups['esgoto']) {
+		console.warn('Camada ESGOTO ainda não foi carregada!');
+		return;
+	}
+
+	if (show) {
+		// Processa e exibe o heat apenas no momento da ativação
+		const heat = ensureEsgotoHeatLayer();
+		if (heat && !map.hasLayer(heat)) {
+			heat.addTo(map);
+		}
+		if (!map.hasLayer(layerGroups['esgoto'])) {
+			map.addLayer(layerGroups['esgoto']);
+		}
+		console.log('Camada ESGOTO + mapa de calor adicionados ao mapa');
+	} else {
+		if (esgotoHeatLayer && map.hasLayer(esgotoHeatLayer)) {
+			map.removeLayer(esgotoHeatLayer);
+		}
+		if (map.hasLayer(layerGroups['esgoto'])) {
+			map.removeLayer(layerGroups['esgoto']);
+		}
+		console.log('Camada ESGOTO + mapa de calor removidos do mapa');
+	}
+}
+
 // Função para alternar basemap
 function changeBasemap(basemapName) {
 	// Remove todas as camadas de basemap
@@ -78,6 +150,11 @@ function toggleLayer(layerId, show) {
 	console.log(`Toggle layer ${layerId}: ${show}`);
 	console.log('Layer groups:', layerGroups);
 	console.log('Layers loaded:', layersLoaded);
+
+	if (layerId === 'esgoto') {
+		toggleEsgotoHeat(show);
+		return;
+	}
 	
 	if (!layersLoaded[layerId]) {
 		console.warn(`Camada ${layerId} ainda não foi carregada!`);
@@ -578,16 +655,16 @@ loadGeoJSON('ARQUIVO JGESON/ÁGUA.geojson', {
 	}
 });
 
-// Carrega ESGOTO (sem adicionar ao mapa inicialmente)
+// Carrega ESGOTO (sem adicionar ao mapa inicialmente — heat só no checkbox)
 loadGeoJSON('ARQUIVO JGESON/ESGOTO.geojson', {
 	pointToLayer: (feature, latlng) => {
 		const marker = L.circleMarker(latlng, {
-			radius: 8,
+			radius: 5,
 			fillColor: '#cc6600',
 			color: '#7a3d00',
-			weight: 2,
-			opacity: 1,
-			fillOpacity: 0.8
+			weight: 1,
+			opacity: 0.55,
+			fillOpacity: 0.35
 		});
 		
 		// Adiciona evento de clique para detectar sobreposições
@@ -608,7 +685,8 @@ loadGeoJSON('ARQUIVO JGESON/ESGOTO.geojson', {
 	if (layer) {
 		layerGroups['esgoto'] = layer;
 		layersLoaded['esgoto'] = true;
-		console.log('Camada ESGOTO carregada (não ativa)');
+		// Heat NÃO é criado aqui — apenas sob demanda no #layer-esgoto
+		console.log('Camada ESGOTO carregada (não ativa; heat sob demanda)');
 		console.log('Features na camada ESGOTO:', layer.getLayers().length);
 		checkAllLayersLoaded();
 	} else {
