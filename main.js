@@ -116,23 +116,17 @@ function toggleEsgotoHeat(show) {
 	}
 
 	if (show) {
-		// Processa e exibe o heat apenas no momento da ativação
+		// Processa e exibe o heat apenas no momento da ativação (independente dos pontos)
 		const heat = ensureEsgotoHeatLayer();
 		if (heat && !map.hasLayer(heat)) {
 			heat.addTo(map);
 		}
-		if (!map.hasLayer(layerGroups['esgoto'])) {
-			map.addLayer(layerGroups['esgoto']);
-		}
-		console.log('Camada ESGOTO + mapa de calor adicionados ao mapa');
+		console.log('Mapa de calor ESGOTO adicionado ao mapa');
 	} else {
 		if (esgotoHeatLayer && map.hasLayer(esgotoHeatLayer)) {
 			map.removeLayer(esgotoHeatLayer);
 		}
-		if (map.hasLayer(layerGroups['esgoto'])) {
-			map.removeLayer(layerGroups['esgoto']);
-		}
-		console.log('Camada ESGOTO + mapa de calor removidos do mapa');
+		console.log('Mapa de calor ESGOTO removido do mapa');
 	}
 }
 
@@ -155,7 +149,7 @@ function toggleLayer(layerId, show) {
 	console.log('Layer groups:', layerGroups);
 	console.log('Layers loaded:', layersLoaded);
 
-	if (layerId === 'esgoto') {
+	if (layerId === 'esgoto-calor') {
 		toggleEsgotoHeat(show);
 		return;
 	}
@@ -439,6 +433,11 @@ document.addEventListener('DOMContentLoaded', function() {
 		console.log('Checkbox ESGOTO alterado:', this.checked);
 		toggleLayer('esgoto', this.checked);
 	});
+
+	document.getElementById('layer-esgoto-calor').addEventListener('change', function() {
+		console.log('Checkbox ESGOTO (Mapa de Calor) alterado:', this.checked);
+		toggleLayer('esgoto-calor', this.checked);
+	});
 	
 	document.getElementById('layer-geral').addEventListener('change', function() {
 		console.log('Checkbox GERAL alterado:', this.checked);
@@ -659,16 +658,16 @@ loadGeoJSON('ARQUIVO JGESON/ÁGUA.geojson', {
 	}
 });
 
-// Carrega ESGOTO (sem adicionar ao mapa inicialmente — heat só no checkbox)
+// Carrega ESGOTO (pontos — sem adicionar ao mapa inicialmente)
 loadGeoJSON('ARQUIVO JGESON/ESGOTO.geojson', {
 	pointToLayer: (feature, latlng) => {
 		const marker = L.circleMarker(latlng, {
-			radius: 5,
+			radius: 8,
 			fillColor: '#cc6600',
 			color: '#7a3d00',
-			weight: 1,
-			opacity: 0.55,
-			fillOpacity: 0.35
+			weight: 2,
+			opacity: 1,
+			fillOpacity: 0.8
 		});
 		
 		// Adiciona evento de clique para detectar sobreposições
@@ -689,8 +688,8 @@ loadGeoJSON('ARQUIVO JGESON/ESGOTO.geojson', {
 	if (layer) {
 		layerGroups['esgoto'] = layer;
 		layersLoaded['esgoto'] = true;
-		// Heat NÃO é criado aqui — apenas sob demanda no #layer-esgoto
-		console.log('Camada ESGOTO carregada (não ativa; heat sob demanda)');
+		// Heat NÃO é criado aqui — apenas sob demanda em #layer-esgoto-calor
+		console.log('Camada ESGOTO (pontos) carregada (não ativa)');
 		console.log('Features na camada ESGOTO:', layer.getLayers().length);
 		checkAllLayersLoaded();
 	} else {

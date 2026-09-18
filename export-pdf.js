@@ -6,11 +6,12 @@
 	const LAYER_LEGEND = [
 		{ id: 'geral', label: 'GERAL', color: '#00cc66' },
 		{ id: 'agua', label: 'ÁGUA', color: '#0066cc' },
+		{ id: 'esgoto', label: 'ESGOTO', color: '#cc6600' },
 		{ id: 'bairros', label: 'BAIRROS', color: '#ffeb3b' },
 		{ id: 'bacias', label: 'BACIAS DE ABASTECIMENTO', color: '#00aacc' },
 		{ id: 'rede-agua', label: 'REDE DE ÁGUA', color: '#0099ff' },
 		{ id: 'rede-esgoto', label: 'REDE DE ESGOTO', color: '#ff0000' },
-		{ id: 'esgoto', label: 'ESGOTO (Mapa de Calor)', color: '#ff6600' }
+		{ id: 'esgoto-calor', label: 'ESGOTO (Mapa de Calor)', color: '#ff6600' }
 	];
 
 	function getJsPDF() {
@@ -32,12 +33,10 @@
 
 	function getActiveLegendItems() {
 		return LAYER_LEGEND.filter(item => {
-			if (item.id === 'esgoto') {
-				const heatOn = typeof esgotoHeatLayer !== 'undefined' &&
+			if (item.id === 'esgoto-calor') {
+				return typeof esgotoHeatLayer !== 'undefined' &&
 					esgotoHeatLayer &&
 					map.hasLayer(esgotoHeatLayer);
-				const pointsOn = layerGroups['esgoto'] && map.hasLayer(layerGroups['esgoto']);
-				return heatOn || pointsOn;
 			}
 			const layer = layerGroups[item.id];
 			return layer && map.hasLayer(layer);
