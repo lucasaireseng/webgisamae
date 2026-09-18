@@ -75,8 +75,7 @@
 		return {
 			meters: niceMeters,
 			label: formatScaleLabel(niceMeters),
-			widthPx: px,
-			ratioText: `1:${Math.round((metersForTarget / targetPx) * 1000 * 96 / 25.4).toLocaleString('pt-BR')}`
+			widthPx: px
 		};
 	}
 
@@ -94,48 +93,240 @@
 			}));
 	}
 
-	function captureMapCanvas() {
+	function parseTranslate(transform) {
+		if (!transform || transform === 'none') return { x: 0, y: 0 };
+		const m3 = transform.match(/matrix3d\((.+)\)/);
+		if (m3) {
+			const v = m3[1].split(',').map(Number);
+			return { x: v[12] || 0, y: v[13] || 0 };
+		}
+		const m2 = transform.match(/matrix\((.+)\)/);
+		if (m2) {
+			const v = m2[1].split(',').map(Number);
+			return { x: v[4] || 0, y: v[5] || 0 };
+		}
+		const t = transform.match(/translate3d\(([^,]+),\s*([^,]+)/);
+		if (t) return { x: parseFloat(t[1]) || 0, y: parseFloat(t[2]) || 0 };
+		const t2 = transform.match(/translate\(([^,]+),\s*([^)]+)/);
+		if (t2) return { x: parseFloat(t2[1]) || 0, y: parseFloat(t2[2]) || 0 };
+		return { x: 0, y: 0 };
+	}
+
+	/** Converte transform do Leaflet em left/top — necessário para html2canvas */
+	function freezeLeafletTransforms(root) {
+		const restore = [];
+		const selectors = [
+			'.leaflet-map-pane',
+			'.leaflet-tile-container',
+			'.leaflet-overlay-pane',
+			'.leaflet-marker-pane',
+			'.leaflet-shadow-pane',
+			'.leaflet-tooltip-pane',
+			'.leaflet-popup-pane'
+		];
+
+		root.querySelectorAll(selectors.join(',')).forEach(el => {
+			const style = window.getComputedStyle(el);
+			const transform = el.style.transform || style.transform;
+			if (!transform || transform === 'none') return;
+
+			const { x, y } = parseTranslate(transform);
+			restore.push({
+				el,
+				transform: el.style.transform,
+				left: el.style.left,
+				top: el.style.top
+			});
+			el.style.transform = 'none';
+			el.style.left = `${(parseFloat(el.style.left) || 0) + x}px`;
+			el.style.top = `${(parseFloat(el.style.top) || 0) + y}px`;
+		});
+
+		return function unfreeze() {
+			restore.forEach(item => {
+				item.el.style.transform = item.transform;
+				item.el.style.left = item.left;
+				item.el.style.top = item.top;
+			});
+		};
+	}
+
+	function walkLatLngs(latlngs, pathCallback) {
+		if (!latlngs || !latlngs.length) return;
+		if (latlngs[0] instanceof L.LatLng || (latlngs[0] && typeof latlngs[0].lat === 'number')) {
+			pathCallback(latlngs);
+			return;
+		}
+		latlngs.forEach(part => walkLatLngs(part, pathCallback));
+	}
+
+	function drawPathOnCanvas(ctx, latlngs, options) {
+		if (!latlngs || !latlngs.length) return;
+		ctx.beginPath();
+		latlngs.forEach((ll, index) => {
+			const p = map.latLngToContainerPoint(ll);
+			if (index === 0) ctx.moveTo(p.x, p.y);
+			else ctx.lineTo(p.x, p.y);
+		});
+		if (options.fill) {
+			ctx.closePath();
+			ctx.fillStyle = options.fillColor || '#3388ff';
+			ctx.globalAlpha = options.fillOpacity != null ? options.fillOpacity : 0.2;
+			ctx.fill();
+		}
+		ctx.strokeStyle = options.color || '#3388ff';
+		ctx.lineWidth = options.weight != null ? options.weight : 2;
+		ctx.globalAlpha = options.opacity != null ? options.opacity : 0.85;
+		ctx.stroke();
+		ctx.globalAlpha = 1;
+	}
+
+	function drawVectorLayer(ctx, layer) {
+		if (!layer) return;
+		layer.eachLayer(function (featureLayer) {
+			if (featureLayer.getLatLng && !featureLayer.getLatLngs) {
+				const ll = featureLayer.getLatLng();
+				const p = map.latLngToContainerPoint(ll);
+				const opt = featureLayer.options || {};
+				const radius = opt.radius || 6;
+				ctx.beginPath();
+				ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+				ctx.fillStyle = opt.fillColor || '#00cc66';
+				ctx.globalAlpha = opt.fillOpacity != null ? opt.fillOpacity : 0.8;
+				ctx.fill();
+				ctx.strokeStyle = opt.color || '#007a3d';
+				ctx.lineWidth = opt.weight != null ? opt.weight : 2;
+				ctx.globalAlpha = opt.opacity != null ? opt.opacity : 1;
+				ctx.stroke();
+				ctx.globalAlpha = 1;
+				return;
+			}
+
+			if (featureLayer.getLatLngs) {
+				const opt = featureLayer.options || {};
+				const isPolygon = featureLayer instanceof L.Polygon;
+				walkLatLngs(featureLayer.getLatLngs(), path => {
+					drawPathOnCanvas(ctx, path, {
+						color: opt.color,
+						weight: opt.weight,
+						opacity: opt.opacity,
+						fill: isPolygon,
+						fillColor: opt.fillColor,
+						fillOpacity: opt.fillOpacity
+					});
+				});
+			}
+		});
+	}
+
+	function drawHeatCanvases(ctx, mapEl) {
+		const canvases = mapEl.querySelectorAll('.leaflet-overlay-pane canvas, .leaflet-heatmap-layer');
+		canvases.forEach(heatCanvas => {
+			try {
+				const rect = heatCanvas.getBoundingClientRect();
+				const mapRect = mapEl.getBoundingClientRect();
+				const x = rect.left - mapRect.left;
+				const y = rect.top - mapRect.top;
+				ctx.drawImage(heatCanvas, x, y, rect.width, rect.height);
+			} catch (e) {
+				console.warn('Não foi possível copiar canvas de calor:', e);
+			}
+		});
+	}
+
+	function drawActiveLayersOnCanvas(ctx, mapEl) {
+		// Ordem: polígonos/linhas primeiro, depois pontos, depois heat por cima se ativo
+		const drawOrder = ['bairros', 'bacias', 'rede-agua', 'rede-esgoto', 'geral', 'agua', 'esgoto'];
+		drawOrder.forEach(id => {
+			const layer = layerGroups[id];
+			if (layer && map.hasLayer(layer)) {
+				drawVectorLayer(ctx, layer);
+			}
+		});
+
+		if (typeof esgotoHeatLayer !== 'undefined' && esgotoHeatLayer && map.hasLayer(esgotoHeatLayer)) {
+			drawHeatCanvases(ctx, mapEl);
+		}
+	}
+
+	function waitFrames(n = 2) {
+		return new Promise(resolve => {
+			let left = n;
+			function tick() {
+				left -= 1;
+				if (left <= 0) resolve();
+				else requestAnimationFrame(tick);
+			}
+			requestAnimationFrame(tick);
+		});
+	}
+
+	async function captureMapCanvas() {
 		const mapEl = document.getElementById('map');
 		const controls = mapEl.querySelector('.leaflet-control-container');
 		const previousDisplay = controls ? controls.style.display : '';
 		if (controls) controls.style.display = 'none';
 
 		map.invalidateSize({ animate: false });
+		await waitFrames(3);
 
-		return html2canvas(mapEl, {
-			useCORS: true,
-			allowTaint: false,
-			logging: false,
-			scale: Math.min(2, window.devicePixelRatio || 1.5),
-			backgroundColor: '#111111',
-			foreignObjectRendering: false,
-			imageTimeout: 15000,
-			onclone: (clonedDoc) => {
-				const clonedMap = clonedDoc.getElementById('map');
-				if (clonedMap) {
-					clonedMap.style.left = '0';
-					clonedMap.style.top = '0';
-					clonedMap.style.width = mapEl.clientWidth + 'px';
-					clonedMap.style.height = mapEl.clientHeight + 'px';
-					clonedMap.style.position = 'relative';
-				}
+		const unfreeze = freezeLeafletTransforms(mapEl);
+
+		try {
+			let baseCanvas;
+			try {
+				baseCanvas = await html2canvas(mapEl, {
+					useCORS: true,
+					allowTaint: false,
+					logging: false,
+					scale: 1,
+					backgroundColor: '#111111',
+					foreignObjectRendering: false,
+					imageTimeout: 15000,
+					ignoreElements: (el) =>
+						el.classList && (
+							el.classList.contains('leaflet-control-container') ||
+							el.classList.contains('leaflet-overlay-pane') ||
+							el.classList.contains('leaflet-marker-pane')
+						)
+				});
+			} catch (e) {
+				console.warn('html2canvas (basemap) falhou, usando fundo sólido:', e);
+				baseCanvas = document.createElement('canvas');
+				baseCanvas.width = mapEl.clientWidth;
+				baseCanvas.height = mapEl.clientHeight;
+				const bg = baseCanvas.getContext('2d');
+				bg.fillStyle = '#1a1a1a';
+				bg.fillRect(0, 0, baseCanvas.width, baseCanvas.height);
 			}
-		}).finally(() => {
+
+			const scale = 2;
+			const out = document.createElement('canvas');
+			out.width = mapEl.clientWidth * scale;
+			out.height = mapEl.clientHeight * scale;
+			const ctx = out.getContext('2d');
+			ctx.scale(scale, scale);
+
+			// Fundo / tiles
+			ctx.drawImage(baseCanvas, 0, 0, mapEl.clientWidth, mapEl.clientHeight);
+
+			// Redesesenha camadas vetoriais e heat (garantia de aparecer no PDF)
+			drawActiveLayersOnCanvas(ctx, mapEl);
+
+			return out;
+		} finally {
+			unfreeze();
 			if (controls) controls.style.display = previousDisplay;
-		});
+		}
 	}
 
 	function drawNorthArrow(doc, x, y, size = 12) {
 		doc.setDrawColor(30);
 		doc.setFillColor(30);
 		doc.setLineWidth(0.4);
-
-		// Agulha norte (triângulo)
 		doc.triangle(x, y - size, x - size * 0.35, y + size * 0.15, x + size * 0.35, y + size * 0.15, 'F');
-		// Base
 		doc.setFillColor(220);
 		doc.triangle(x, y + size * 0.55, x - size * 0.35, y + size * 0.15, x + size * 0.35, y + size * 0.15, 'FD');
-
 		doc.setFont('helvetica', 'bold');
 		doc.setFontSize(9);
 		doc.setTextColor(20);
@@ -145,13 +336,11 @@
 	function drawScaleBar(doc, x, y, scaleInfo) {
 		const barWidthMm = Math.max(18, Math.min(50, scaleInfo.widthPx * 0.2));
 		const barHeight = 2.2;
-
 		doc.setDrawColor(20);
 		doc.setFillColor(255);
 		doc.rect(x, y, barWidthMm, barHeight, 'FD');
 		doc.setFillColor(20);
 		doc.rect(x, y, barWidthMm / 2, barHeight, 'F');
-
 		doc.setFont('helvetica', 'normal');
 		doc.setFontSize(8);
 		doc.setTextColor(20);
@@ -165,17 +354,14 @@
 		doc.setFontSize(9);
 		doc.setTextColor(20);
 		doc.text('Legenda (camadas ativas)', x, y);
-
 		let cursorY = y + 5;
 		doc.setFont('helvetica', 'normal');
 		doc.setFontSize(8);
-
 		if (!items.length) {
 			doc.setTextColor(80);
 			doc.text('Nenhuma camada operacional ativa.', x, cursorY);
 			return cursorY + 4;
 		}
-
 		items.forEach(item => {
 			const rgb = hexToRgb(item.color);
 			doc.setFillColor(rgb.r, rgb.g, rgb.b);
@@ -186,7 +372,6 @@
 			doc.text(lines, x + 6, cursorY);
 			cursorY += Math.max(5, lines.length * 3.5);
 		});
-
 		return cursorY;
 	}
 
@@ -233,11 +418,9 @@
 			const pageH = doc.internal.pageSize.getHeight();
 			const margin = 10;
 
-			// Fundo do layout
 			doc.setFillColor(248, 248, 248);
 			doc.rect(0, 0, pageW, pageH, 'F');
 
-			// Cabeçalho
 			const headerH = 24;
 			doc.setFillColor(26, 26, 26);
 			doc.rect(0, 0, pageW, headerH, 'F');
@@ -256,12 +439,10 @@
 				margin + 20,
 				10
 			);
-
 			doc.setFont('helvetica', 'normal');
 			doc.setFontSize(9);
 			doc.text(`Emissão: ${formatEmissionDate()}`, margin + 20, 16);
 
-			// Área do mapa
 			const mapTop = headerH + 6;
 			const footerH = 36;
 			const mapBottom = pageH - margin - footerH;
@@ -293,10 +474,8 @@
 			const mapImg = mapCanvas.toDataURL('image/jpeg', 0.92);
 			doc.addImage(mapImg, 'JPEG', mapX, mapY, drawW, drawH);
 
-			// Norte geográfico (canto superior direito do mapa)
 			drawNorthArrow(doc, mapX + drawW - 10, mapY + 14, 8);
 
-			// Rodapé cartográfico
 			const footerY = pageH - footerH;
 			doc.setFillColor(255, 255, 255);
 			doc.setDrawColor(180);
@@ -312,7 +491,7 @@
 			doc.save(fileName);
 		} catch (error) {
 			console.error('Erro ao exportar PDF:', error);
-			alert('Não foi possível gerar o PDF. Tente novamente ou use outro mapa de fundo (ESRI).');
+			alert('Não foi possível gerar o PDF. Tente novamente.');
 		} finally {
 			if (btn) {
 				btn.disabled = false;
