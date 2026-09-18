@@ -117,6 +117,36 @@ html, body {
 	color: #ff6b6b;
 }
 
+.report-actions {
+	margin: 0 0 18px;
+}
+
+.btn-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 12px 18px;
+	background: #0066cc;
+	color: #ffffff;
+	border: 1px solid #004c99;
+	border-radius: 8px;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+	background: #0077ee;
+}
+
+.btn-primary:disabled {
+	opacity: 0.65;
+	cursor: wait;
+}
+
 .kpi-row {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));

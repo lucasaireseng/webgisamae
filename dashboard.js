@@ -488,6 +488,7 @@ async function initDashboard() {
 		renderTemaAssuntoChart(records);
 		renderBairroTable(records);
 
+		window.dadosDashboardGeral = records;
 		setStatus(`Dados carregados: ${records.length.toLocaleString('pt-BR')} registros da camada GERAL.`);
 	} catch (error) {
 		console.error(error);
@@ -496,3 +497,280 @@ async function initDashboard() {
 }
 
 initDashboard();
+
+/* ========== Relatório Executivo PDF ========== */
+
+function loadImageAsDataUrl(url) {
+	return fetch(encodeURI(url))
+		.then(response => {
+			if (!response.ok) throw new Error(`Falha ao carregar ${url}`);
+			return response.blob();
+		})
+		.then(blob => new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = () => resolve(null);
+			reader.readAsDataURL(blob);
+		}))
+		.catch(() => null);
+}
+
+function ensureReportSpace(doc, currentY, needed = 42) {
+	const pageH = doc.internal.pageSize.getHeight();
+	if (currentY + needed > pageH - 14) {
+		doc.addPage();
+		return 18;
+	}
+	return currentY;
+}
+
+function addReportSectionTitle(doc, title, y, primaryColor) {
+	y = ensureReportSpace(doc, y, 20);
+	doc.setFont('helvetica', 'bold');
+	doc.setFontSize(11);
+	doc.setTextColor(...primaryColor);
+	doc.text(title, 14, y);
+	return y + 5;
+}
+
+function addReportDescriptiveText(doc, texto, y) {
+	doc.setFont('helvetica', 'italic');
+	doc.setFontSize(9);
+	doc.setTextColor(80, 80, 80);
+	const linhas = doc.splitTextToSize(texto, 182);
+	y = ensureReportSpace(doc, y, linhas.length * 4 + 6);
+	doc.text(linhas, 14, y);
+	return y + (linhas.length * 4) + 2;
+}
+
+async function gerarRelatorioDashboard(dadosGeral) {
+	if (!window.jspdf || !window.jspdf.jsPDF) {
+		alert('Biblioteca jsPDF não carregou. Recarregue a página.');
+		return;
+	}
+
+	const { jsPDF } = window.jspdf;
+	const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+	const primaryColor = [0, 102, 204];
+	const textColor = [40, 40, 40];
+	const btn = document.getElementById('btn-gerar-relatorio');
+	const originalText = btn ? btn.textContent : '';
+
+	if (btn) {
+		btn.disabled = true;
+		btn.textContent = 'Gerando relatório…';
+	}
+
+	try {
+		const [logoRioVerde, logoAmae] = await Promise.all([
+			loadImageAsDataUrl('LOGO/LOGO RIO VERDE.png'),
+			loadImageAsDataUrl('LOGO/AMAEGIS.jpg')
+		]);
+
+		// Cabeçalho institucional — logos lado a lado
+		if (logoAmae) doc.addImage(logoAmae, 'JPEG', 14, 8, 22, 16);
+		if (logoRioVerde) doc.addImage(logoRioVerde, 'PNG', 40, 8, 22, 16);
+
+		doc.setFont('helvetica', 'bold');
+		doc.setFontSize(14);
+		doc.setTextColor(...textColor);
+		doc.text('WebGIS AMAE - Rio Verde/GO', 105, 14, { align: 'center' });
+
+		doc.setFontSize(10);
+		doc.setFont('helvetica', 'normal');
+		doc.text('Relatório Analítico Executivo com Diagnóstico de Dados', 105, 20, { align: 'center' });
+		doc.setFontSize(8);
+		doc.setTextColor(100);
+		doc.text('Origem dos dados: camada GERAL — Rio Verde/GO', 105, 25, { align: 'center' });
+
+		const dataEmissao = new Date().toLocaleString('pt-BR', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+		doc.text(`Gerado em: ${dataEmissao}`, 105, 29, { align: 'center' });
+
+		doc.setDrawColor(200);
+		doc.line(14, 32, 196, 32);
+
+		let currentY = 38;
+
+		// Processamento com campos reais do Dashboard
+		const bairrosUltimoMes = {};
+		const distribuicaoTema = {};
+		const registrosAssunto = {};
+		const temaXassunto = {};
+		const resumoBairro = {};
+
+		const { filtered: registros30dias, start: inicio30, end: fim30 } = filterLast30Days(dadosGeral);
+
+		registros30dias.forEach(props => {
+			const bairro = cleanText(props.Bairro);
+			bairrosUltimoMes[bairro] = (bairrosUltimoMes[bairro] || 0) + 1;
+		});
+
+		dadosGeral.forEach(props => {
+			const bairro = cleanText(props.Bairro);
+			const tema = cleanText(props.Tema);
+			const assunto = cleanText(props.Assunto);
+
+			distribuicaoTema[tema] = (distribuicaoTema[tema] || 0) + 1;
+			registrosAssunto[assunto] = (registrosAssunto[assunto] || 0) + 1;
+
+			if (!temaXassunto[tema]) temaXassunto[tema] = {};
+			temaXassunto[tema][assunto] = (temaXassunto[tema][assunto] || 0) + 1;
+
+			if (!resumoBairro[bairro]) resumoBairro[bairro] = { total: 0, temas: {} };
+			resumoBairro[bairro].total += 1;
+			resumoBairro[bairro].temas[tema] = (resumoBairro[bairro].temas[tema] || 0) + 1;
+		});
+
+		const totalGeral = dadosGeral.length || 1;
+		const periodo30 = `${inicio30.toLocaleDateString('pt-BR')} a ${fim30.toLocaleDateString('pt-BR')}`;
+
+		const tableOptions = {
+			headStyles: { fillColor: primaryColor, textColor: 255, fontStyle: 'bold' },
+			theme: 'striped',
+			margin: { left: 14, right: 14 },
+			styles: { font: 'helvetica', fontSize: 8, textColor: textColor },
+			alternateRowStyles: { fillColor: [245, 248, 252] }
+		};
+
+		// 1. Recorrência por Bairro — Último Mês / 30 dias
+		currentY = addReportSectionTitle(doc, '1. Recorrência por Bairro — Último Mês', currentY, primaryColor);
+
+		const topBairrosMes = Object.entries(bairrosUltimoMes).sort((a, b) => b[1] - a[1]);
+		const nomeTopBairroMes = topBairrosMes[0] ? topBairrosMes[0][0] : 'Nenhum';
+		const qtdTopBairroMes = topBairrosMes[0] ? topBairrosMes[0][1] : 0;
+
+		const texto1 = `Análise Temporal (${periodo30}): Nos últimos 30 dias, o bairro com maior incidência de demandas foi ${nomeTopBairroMes}, concentrando ${qtdTopBairroMes} ocorrência(s) de um total de ${registros30dias.length} registro(s) no período. Recomenda-se atenção especial das equipes operacionais a esta localidade.`;
+		currentY = addReportDescriptiveText(doc, texto1, currentY);
+
+		doc.autoTable({
+			...tableOptions,
+			startY: currentY,
+			head: [['#', 'Bairro', 'Ocorrências (Últimos 30 dias)']],
+			body: topBairrosMes.slice(0, 5).map(([b, c], i) => [(i + 1).toString(), b, c.toString()])
+		});
+		currentY = doc.lastAutoTable.finalY + 10;
+
+		// 2. Distribuição por Tema
+		currentY = addReportSectionTitle(doc, '2. Distribuição por Tema', currentY, primaryColor);
+
+		const temasOrdenados = Object.entries(distribuicaoTema).sort((a, b) => b[1] - a[1]);
+		const temaPrincipal = temasOrdenados[0] ? temasOrdenados[0][0] : 'Geral';
+		const percTemaPrincipal = temasOrdenados[0]
+			? ((temasOrdenados[0][1] / totalGeral) * 100).toFixed(1).replace('.', ',')
+			: '0';
+
+		const texto2 = `Diagnóstico Temático: O total de registros analisados é de ${totalGeral.toLocaleString('pt-BR')}. A categoria predominante é "${temaPrincipal}", representando ${percTemaPrincipal}% de todas as chamadas cadastradas na camada GERAL.`;
+		currentY = addReportDescriptiveText(doc, texto2, currentY);
+
+		doc.autoTable({
+			...tableOptions,
+			startY: currentY,
+			head: [['Tema', 'Total de Registros', 'Percentual']],
+			body: temasOrdenados.map(([t, c]) => [
+				t,
+				c.toString(),
+				`${((c / totalGeral) * 100).toFixed(1).replace('.', ',')}%`
+			])
+		});
+		currentY = doc.lastAutoTable.finalY + 10;
+
+		// 3. Registros por Assunto
+		currentY = addReportSectionTitle(doc, '3. Registros por Assunto', currentY, primaryColor);
+
+		const assuntosOrdenados = Object.entries(registrosAssunto).sort((a, b) => b[1] - a[1]);
+		const assuntoPrincipal = assuntosOrdenados[0] ? assuntosOrdenados[0][0] : 'Indefinido';
+		const qtdAssuntoPrincipal = assuntosOrdenados[0] ? assuntosOrdenados[0][1] : 0;
+
+		const texto3 = `Detalhamento de Demandas: O assunto de maior frequência registrada no sistema é "${assuntoPrincipal}", totalizando ${qtdAssuntoPrincipal.toLocaleString('pt-BR')} solicitação(ões).`;
+		currentY = addReportDescriptiveText(doc, texto3, currentY);
+
+		doc.autoTable({
+			...tableOptions,
+			startY: currentY,
+			head: [['Assunto', 'Total']],
+			body: assuntosOrdenados.slice(0, 10).map(([a, c]) => [a, c.toString()])
+		});
+
+		// Página 2 — seções 4 e 5
+		doc.addPage();
+		currentY = 20;
+
+		// 4. Cruzamento Tema × Assunto
+		currentY = addReportSectionTitle(doc, '4. Cruzamento: Tema × Assunto', currentY, primaryColor);
+
+		const texto4 = 'Matriz de Correlação: Desdobramento das demandas específicas agrupadas dentro de cada tema principal, permitindo identificar as causas específicas dos chamados operacionais e orientar ações de prevenção.';
+		currentY = addReportDescriptiveText(doc, texto4, currentY);
+
+		const dataMatriz = [];
+		Object.keys(temaXassunto).sort().forEach(tema => {
+			Object.entries(temaXassunto[tema])
+				.sort((a, b) => b[1] - a[1])
+				.forEach(([assunto, count]) => {
+					dataMatriz.push([tema, assunto, count.toString()]);
+				});
+		});
+
+		doc.autoTable({
+			...tableOptions,
+			startY: currentY,
+			head: [['Tema', 'Assunto', 'Quantidade']],
+			body: dataMatriz,
+			showHead: 'everyPage'
+		});
+		currentY = doc.lastAutoTable.finalY + 10;
+
+		// 5. Resumo Geral por Bairro
+		currentY = ensureReportSpace(doc, currentY, 35);
+		currentY = addReportSectionTitle(doc, '5. Resumo Geral por Bairro', currentY, primaryColor);
+
+		const totalBairrosUnicos = Object.keys(resumoBairro).length;
+		const texto5 = `Panorama Territorial: Existem registros ativos em ${totalBairrosUnicos} bairro(s) de Rio Verde/GO. A tabela a seguir consolida o volume acumulado e identifica o tema predominante em cada área.`;
+		currentY = addReportDescriptiveText(doc, texto5, currentY);
+
+		const dataResumoBairro = Object.entries(resumoBairro)
+			.sort((a, b) => b[1].total - a[1].total)
+			.map(([bairro, info]) => {
+				const temaPredominante = Object.entries(info.temas).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
+				return [bairro, info.total.toString(), temaPredominante];
+			});
+
+		doc.autoTable({
+			...tableOptions,
+			startY: currentY,
+			head: [['Bairro', 'Total Acumulado', 'Tema Predominante']],
+			body: dataResumoBairro,
+			showHead: 'everyPage'
+		});
+
+		const fileName = `Relatorio_Analitico_AMAE_${new Date().toISOString().slice(0, 10)}.pdf`;
+		doc.save(fileName);
+	} catch (error) {
+		console.error('Erro ao gerar relatório:', error);
+		alert('Não foi possível gerar o relatório. Verifique o console para detalhes.');
+	} finally {
+		if (btn) {
+			btn.disabled = false;
+			btn.textContent = originalText.trim() || 'Gerar Relatório Executivo (PDF)';
+		}
+	}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+	const btnRelatorio = document.getElementById('btn-gerar-relatorio');
+	if (btnRelatorio) {
+		btnRelatorio.addEventListener('click', () => {
+			if (window.dadosDashboardGeral && window.dadosDashboardGeral.length) {
+				gerarRelatorioDashboard(window.dadosDashboardGeral);
+			} else {
+				alert('Aguarde o carregamento dos dados do Dashboard.');
+			}
+		});
+	}
+});

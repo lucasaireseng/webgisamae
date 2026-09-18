@@ -4,8 +4,10 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Dashboard AMAE - Camada GERAL</title>
-	<link rel="stylesheet" href="dashboard.css?v=20260913g">
+	<link rel="stylesheet" href="dashboard.css?v=20260918rel">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body class="dashboard-page">
 	<header id="header">
@@ -42,6 +44,12 @@
 		</section>
 
 		<p id="dashboard-status" class="dashboard-status">Carregando dados da camada GERAL…</p>
+
+		<section class="report-actions">
+			<button id="btn-gerar-relatorio" class="btn-primary" type="button">
+				Gerar Relatório Executivo (PDF)
+			</button>
+		</section>
 
 		<section class="priority-section">
 			<div class="priority-header">
@@ -142,6 +150,6 @@
 		</section>
 	</main>
 
-	<script src="dashboard.js?v=20260913g"></script>
+	<script src="dashboard.js?v=20260918rel"></script>
 </body>
 </html>
